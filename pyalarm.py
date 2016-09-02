@@ -208,20 +208,16 @@ class PyAlarm(Gtk.Application):
 		sList = re.split(',', self.sDaysSelected)
 		for i in sList:
 			if not i == '':
-#				i = int(i)
-#				if isinstance(i, int):
 				self.toggleDaySettings[int(i)] = 1 
 
 	if not self.sMonthsSelected == "*":
 		sList = re.split(',', self.sMonthsSelected) 
 	        for i in sList:
 			if not i == '':
-#				i = int(i)
-#				if isinstance(i, int):
 				self.toggleMonthSettings[int(i)] = 1
 
 	if self.sSound == "None":
-		self.sSound = self.sSoundList[1]
+		self.sSound = self.sSoundList[3]
 
 	for i in range(0,self.sSoundListCount+1):
 		if self.sSoundList[i] == self.sSound:
@@ -330,7 +326,6 @@ class PyAlarm(Gtk.Application):
         text = combo.get_active_text()
         if text != None:
             self.sSound = text
-	    #print text
 
 	if self.bStartLoad:
 		self.bStartLoad = 0
@@ -720,9 +715,15 @@ class PyAlarm(Gtk.Application):
         buttonSM.connect("clicked", self.on_unselect_months_clicked)
         hboxSM.pack_start(buttonSM, False, False, self.DEF_PAD)
 
+        bboxB = Gtk.HButtonBox ()
+        vboxS.pack_start(bboxB, False, False, 0)
+
+        hboxB = Gtk.HBox (False, 1)
+        bboxB.pack_start(hboxB, False, True, self.DEF_PAD)
+
         buttonClose = Gtk.Button("Close")
         buttonClose.connect("clicked", self.on_sched_close_clicked)
-        vboxS.pack_start(buttonClose, False, False, self.DEF_PAD)
+        hboxB.pack_start(buttonClose, False, False, self.DEF_PAD)
 
     def draw_gtk_addalarm(self, window):
 	#print "draw_gtk_addalarm"
@@ -881,19 +882,19 @@ class PyAlarm(Gtk.Application):
         buttonSave = Gtk.Button("Save the alarm")
         buttonSave.connect("clicked", self.save_alarm, self.labelDateTime)
         bboxS.add(buttonSave)
-        buttonSave.grab_default()
+        #buttonSave.grab_default()
 
         buttonCancel = Gtk.Button("Cancel")
 	buttonCancel.connect("clicked", self.on_wAddAlarm_close_clicked)
         bboxS.add(buttonCancel)
-        buttonCancel.grab_default()
+        #buttonCancel.grab_default()
 
 	if self.bAddAlarmMode:
 		self.sName = self.entryName.get_text()
 
 		self.toggleEveryday.set_active(1)
 
-                self.comboSound.set_active(1)
+                self.comboSound.set_active(3)
 
 		self.toggleActive.set_active(1)
                 self.bAlarmActive = 1
@@ -936,6 +937,8 @@ class PyAlarm(Gtk.Application):
 	        	for alarm_ref in sList:
 		            alarm_liststore.append(list(alarm_ref))
 
+	alarm_liststore.set_sort_column_id(1, 0)
+
 	if i < 15:
 		i = i*50
 	else:
@@ -959,9 +962,14 @@ class PyAlarm(Gtk.Application):
 
 	self.filter = alarm_liststore.filter_new()
         self.treeview = Gtk.TreeView.new_with_model(self.filter)
-        for i, column_title in enumerate(["Id", "Name", "Time", "Days ", "Months", "Day of week", "Active"]):
+	self.treeview.set_headers_clickable(True)
+	for i, column_title in enumerate(["Id", "Name", "Time", "Days ", "Months", "Day of week", "Active"]):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
+	    #if column_title == "Name":
+		#column.set_clickable(True)
+            	#column.set_sort_column_id(0)
+		#column.set_sort_indicator(True)
             self.treeview.append_column(column)
 	    if column_title == "Id":
 		    column.set_visible(False)
@@ -986,18 +994,18 @@ class PyAlarm(Gtk.Application):
 
         buttonAddAlarm = Gtk.Button("Add new alarm")
         buttonAddAlarm.connect("clicked", self.on_wListAlarms_addnew_clicked)
-        buttonAddAlarm.grab_default()
+        #buttonAddAlarm.grab_default()
         hboxB.pack_start(buttonAddAlarm, False, False, self.DEF_PAD)
 	
         buttonDelAlarm = Gtk.Button("Delete selected alarm")
         buttonDelAlarm.connect("clicked", self.on_wListAlarms_del_clicked)
-        buttonDelAlarm.grab_default()
+        #buttonDelAlarm.grab_default()
         hboxB.pack_start(buttonDelAlarm, False, False, self.DEF_PAD)
 
         buttonClose = Gtk.Button("Close")
         #buttonClose.connect("clicked", lambda w: Gtk.main_quit())
 	buttonClose.connect("clicked", self.on_wListAlarms_close_clicked)
-	buttonClose.grab_default()
+	#buttonClose.grab_default()
 	hboxB.pack_start(buttonClose, False, False, self.DEF_PAD)
 
     def editAlarm(self, configSection):
@@ -1045,11 +1053,9 @@ class PyAlarm(Gtk.Application):
 	return 0
 
     def isTimeToRun_alarm(self, sAlarmID, sName, sSound, sCron):
-        #print sName
-
 	date = datetime.datetime.today()
-	nCDay = str(date.day)
-	nCMonth = str(date.month)
+	nCDay = int(date.day)
+	nCMonth = int(date.month)
 	nCDOW = int(date.weekday()) + 1
 	
 	nCHour = int(time.strftime("%H"))
@@ -1076,7 +1082,8 @@ class PyAlarm(Gtk.Application):
 	else:
 		bCMonth = 1
 
-        if not bCMonth:
+	
+        if not bCMonth == 1:
                 return 0
 
         bCDay = 0
@@ -1097,13 +1104,6 @@ class PyAlarm(Gtk.Application):
         if not int(sCron[1]) == nCMinutes:
                 return 0
 
-	#print "nDOW " + str(nCDOW)
-	#print "nDay " + str(nCDay)
-	#print "nMonth " + str(nCMonth)
-	#print "nCHour " + str(nCHour)
-	#print "nMinutes " + str(nCMinutes)
-
-	#print sName
 	app.sAlarmStarted = sAlarmID
 	app.play_alarm(sAlarmID, sName, sSound)
 
@@ -1179,11 +1179,12 @@ class Application(Gtk.ApplicationWindow):
 	self.pidfile = "/var/tmp/pyalarm.pid"
 	self.alarm = None
 
+        self.sIcon = "/usr/share/pyalarm/icons/pyalarm.svg"
+        self.sActiveIcon = "/usr/share/pyalarm/icons/pyalarm-active.svg"
+
     def start_indicator(self):
-	#sIcon = "/usr/share/icons/hicolor/scalable/apps/gnome-panel-clock.svg"
-	sIcon = "/usr/share/pyalarm/icons/pyalarm.svg"
-	#sIcon = os.getcwd() + '/alarm/alarm.svg'
-	indicator = appindicator.Indicator.new(APPINDICATOR_ID, sIcon, appindicator.IndicatorCategory.SYSTEM_SERVICES)
+	#sIcon = "/usr/share/pyalarm/icons/pyalarm.svg"
+	indicator = appindicator.Indicator.new(APPINDICATOR_ID, app.sIcon, appindicator.IndicatorCategory.SYSTEM_SERVICES)
 
 	indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
 	indicator.set_menu(self.build_menu())
@@ -1199,14 +1200,13 @@ class Application(Gtk.ApplicationWindow):
 		time.sleep(0.1)
 
 		while Gtk.events_pending():
-
 			Gtk.main_iteration()
 			#Gtk.main()
 	
 		if app.bAlarmOn:
-			indicator.set_icon("/usr/share/pyalarm/icons/pyalarm-active.svg")
+			indicator.set_icon(app.sActiveIcon)
 		else:
-			indicator.set_icon("/usr/share/pyalarm/icons/pyalarm.svg")
+			indicator.set_icon(app.sIcon)
 
         if os.path.isfile(app.pidfile):
                 os.unlink(app.pidfile)
@@ -1271,7 +1271,7 @@ class Application(Gtk.ApplicationWindow):
 			app.bAlarmOn = 0
 		return 0
 
-	notify.Notification.new("Alarm: ", sName, None).show()
+	notify.Notification.new("Alarm: ", sName, app.sIcon).show()
 
 	sScript = "/dev/shm/alarm.sh"
 
