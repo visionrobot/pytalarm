@@ -2,8 +2,8 @@
 
 # alarm.py
 
-# Description: A simple Python program to make the computer act 
-# like an alarm clock. 
+# Description: A simple Python program to make the computer act
+# like an alarm clock.
 
 import re
 import string
@@ -88,7 +88,7 @@ class PyAlarm(Gtk.Application):
 
 	self.bAddAlarmMode = 1
 	self.init_settings()
-	
+
 	self.windowAddAlarm = None
 	self.bwAddAlarmActive = 0
 
@@ -111,7 +111,7 @@ class PyAlarm(Gtk.Application):
 	self.toggleDay = 8*[0]
 	self.toggleDaySettings = 8*[0]
 
-	self.sDayName = 8*[0]	
+	self.sDayName = 8*[0]
         self.sDayName[1] = "Monday"
         self.sDayName[2] = "Tuesday"
 	self.sDayName[3] = "Wednesday"
@@ -166,10 +166,10 @@ class PyAlarm(Gtk.Application):
                 for i in range(1,6):
                         self.sCronEntry = self.sCronEntry + self.sCron[i] + " "
 
-                self.sSound = ""
                 self.bAlarmActive = 1
                 self.bCalendarSelected = 0
 
+		self.sSound = ""
 		self.sSoundListCount = 0
 
                 self.sSettings = ""
@@ -190,6 +190,9 @@ class PyAlarm(Gtk.Application):
         adj = Gtk.Adjustment(int(self.sMinutes), 0, 59, 1, 5, 0)
         self.spinnerMinutes.set_adjustment(adj)
 
+	if self.sCron[2] == "*":
+		self.toggleEachHour.set_active(1)
+
 	if (self.sCron[3] == "*") and (self.sCron[4] == "*") and (self.sCron[5] == "*"):
 		self.toggleEveryday.set_active(1)
 		self.bCalendarSelected = 0
@@ -202,16 +205,16 @@ class PyAlarm(Gtk.Application):
 
 	self.sDaysSelected = ""
 	if not self.sCron[5] == "*":
-		self.sDaysSelected = self.sCron[5]	
+		self.sDaysSelected = self.sCron[5]
 
 	if not self.sDaysSelected == "*":
 		sList = re.split(',', self.sDaysSelected)
 		for i in sList:
 			if not i == '':
-				self.toggleDaySettings[int(i)] = 1 
+				self.toggleDaySettings[int(i)] = 1
 
 	if not self.sMonthsSelected == "*":
-		sList = re.split(',', self.sMonthsSelected) 
+		sList = re.split(',', self.sMonthsSelected)
 	        for i in sList:
 			if not i == '':
 				self.toggleMonthSettings[int(i)] = 1
@@ -237,7 +240,11 @@ class PyAlarm(Gtk.Application):
                 self.sDateTime = " "
 
         self.sName = self.entryName.get_text()
-        self.sHour = self.spinnerHour.get_value_as_int()
+
+	if self.toggleEachHour.get_active():
+		self.sHour = "*"
+	else:
+	        self.sHour = self.spinnerHour.get_value_as_int()
         self.sMinutes = self.spinnerMinutes.get_value_as_int()
         #self.sDateTime = self.sDateTime + str(self.sHour) + ":" +  str(self.sMinutes)
 
@@ -248,6 +255,13 @@ class PyAlarm(Gtk.Application):
 
         self.sSettings = self.sName + " | " + self.sCronEntry + " | " + self.sSound + " | " + str(self.bAlarmActive);
         self.labelDateTime.set_text(self.sSettings)
+
+    def toggle_each_hour(self, widget):
+	if self.toggleEachHour.get_active():
+		self.sHour = "*"
+		self.sCron[2] = "*"
+
+	self.save_strings()
 
     def toggle_everyday(self, widget):
         if self.toggleEveryday.get_active():
@@ -279,7 +293,7 @@ class PyAlarm(Gtk.Application):
 
 	self.sCron[3] = str(date.day)
 	self.sCron[4] = str(date.month)
-	
+
 	self.sMonthsSelected = str(date.month)
 	self.toggleEveryday.set_active(0)
 
@@ -288,12 +302,15 @@ class PyAlarm(Gtk.Application):
 
     def entryCron_update(self):
         self.sCron[1] = str(self.sMinutes)
-        self.sCron[2] = str(self.sHour)
+	if self.toggleEachHour.get_active():
+		self.sCron[2] = "*"
+	else:
+	        self.sCron[2] = str(self.sHour)
 
 	if self.sDaysSelected == "":
 		if not self.bCalendarSelected:
 			self.sCron[5] = "*"
-	else: 
+	else:
 	        self.sCron[5] = self.sDaysSelected
 
 	if self.sMonthsSelected == "":
@@ -314,7 +331,10 @@ class PyAlarm(Gtk.Application):
         self.save_strings()
 
     def save_time(self, widget):
-	self.sHour = self.spinnerHour.get_value_as_int()
+	if self.toggleEachHour.get_active():
+		self.sHour = "*"
+	else:
+		self.sHour = self.spinnerHour.get_value_as_int()
         self.sMinutes = self.spinnerMinutes.get_value_as_int()
 
 	self.save_strings()
@@ -342,7 +362,7 @@ class PyAlarm(Gtk.Application):
 
         buf = "%s" % (str(self.sSettings))
         label.set_text(buf)
-	
+
 	config = ConfigParser.ConfigParser()
 	config.read(self.sConfigFile)
 
@@ -408,7 +428,7 @@ class PyAlarm(Gtk.Application):
 		(w,h) = self.windowAddAlarm.get_size()
                 config.set(sSection,sWName + 'W', w)
                 config.set(sSection,sWName + 'H', h)
-		
+
         if sWName == "windowListAlarms":
 		(x, y) = self.windowListAlarms.get_position()
                 config.set(sSection,sWName + 'X', x)
@@ -448,6 +468,7 @@ class PyAlarm(Gtk.Application):
 	if self.toggleDay[i].get_active():
 		self.toggleDaySettings[i] = 1
 		self.bCalendarSelected = 0
+		self.toggleEveryday.set_active(0)
 	else:
 		self.toggleDaySettings[i] = 0
 
@@ -465,7 +486,7 @@ class PyAlarm(Gtk.Application):
     def toggle_month(self, toggle, nCB):
         i = nCB
         if self.toggleMonth[i].get_active():
-                self.toggleMonthSettings[i] = 1 
+                self.toggleMonthSettings[i] = 1
 		self.bCalendarSelected = 0
         else:
                 self.toggleMonthSettings[i] = 0
@@ -780,6 +801,9 @@ class PyAlarm(Gtk.Application):
 	self.spinnerHour = Gtk.SpinButton()
 	if self.bAddAlarmMode:
 		self.sHour = int(time.strftime("%H"))
+	else:
+		if self.sHour == "*":
+			self.sHour = int(time.strftime("%H"))
         adj = Gtk.Adjustment(int(self.sHour), 0, 24, 1, 5, 0)
 	self.spinnerHour.set_adjustment(adj)
         self.spinnerHour.set_wrap(True)
@@ -788,7 +812,7 @@ class PyAlarm(Gtk.Application):
 
         vboxMinutes = Gtk.VBox(False, 0)
         hboxPtt.pack_start(vboxMinutes, True, True, 5)
-  
+
         labelMinutes = Gtk.Label("Minutes")
         labelMinutes.set_alignment(0, 0.5)
         vboxMinutes.pack_start(labelMinutes, False, True, 0)
@@ -802,14 +826,22 @@ class PyAlarm(Gtk.Application):
 	adj.connect("value_changed", self.save_time)
         vboxMinutes.pack_start(self.spinnerMinutes, False, True, 0)
 
-        self.toggleEveryday = Gtk.CheckButton("Repeat everyday")
-        self.toggleEveryday.connect("toggled", self.toggle_everyday)
-	vboxPtt.pack_start(self.toggleEveryday, True, True, 0)
-
-	# Repeat settings
+        # Repeat settings
         bboxB = Gtk.HButtonBox ()
         vboxPtt.pack_start(bboxB, False, False, 0)
 
+        vboxB = Gtk.VBox (False, 1)
+        bboxB.pack_start(vboxB, False, True, self.DEF_PAD)
+
+        self.toggleEachHour = Gtk.CheckButton("Repeat each hour")
+        self.toggleEachHour.connect("toggled", self.toggle_each_hour)
+        vboxB.pack_start(self.toggleEachHour, True, True, 0)
+
+        self.toggleEveryday = Gtk.CheckButton("Repeat everyday")
+        self.toggleEveryday.connect("toggled", self.toggle_everyday)
+	vboxB.pack_start(self.toggleEveryday, True, True, 0)
+
+        # Repeat settings
         hboxB = Gtk.HBox (False, 1)
         bboxB.pack_start(hboxB, False, True, self.DEF_PAD)
 
@@ -841,10 +873,10 @@ class PyAlarm(Gtk.Application):
 
         vboxPd = Gtk.VBox(True, self.DEF_PAD_SMALL)
         framePd.add(vboxPd)
-  
+
         hboxPd = Gtk.HBox (False, 3)
         vboxPd.pack_start(hboxPd, False, True, 0)
- 
+
         labelAlarm = Gtk.Label("Alarm:")
         hboxPd.pack_start(labelAlarm, False, True, 0)
 
@@ -892,6 +924,7 @@ class PyAlarm(Gtk.Application):
 	if self.bAddAlarmMode:
 		self.sName = self.entryName.get_text()
 
+		self.toggleEachHour.set_active(0)
 		self.toggleEveryday.set_active(1)
 
                 self.comboSound.set_active(3)
@@ -906,7 +939,7 @@ class PyAlarm(Gtk.Application):
 
 	config = ConfigParser.ConfigParser()
 	config.read(self.sConfigFile)
-	
+
 	alarm_liststore = Gtk.ListStore(str, str, str, str, str, str, str)
         self.current_filter = None
 
@@ -996,7 +1029,7 @@ class PyAlarm(Gtk.Application):
         buttonAddAlarm.connect("clicked", self.on_wListAlarms_addnew_clicked)
         #buttonAddAlarm.grab_default()
         hboxB.pack_start(buttonAddAlarm, False, False, self.DEF_PAD)
-	
+
         buttonDelAlarm = Gtk.Button("Delete selected alarm")
         buttonDelAlarm.connect("clicked", self.on_wListAlarms_del_clicked)
         #buttonDelAlarm.grab_default()
@@ -1057,7 +1090,7 @@ class PyAlarm(Gtk.Application):
 	nCDay = int(date.day)
 	nCMonth = int(date.month)
 	nCDOW = int(date.weekday()) + 1
-	
+
 	nCHour = int(time.strftime("%H"))
 	nCMinutes = int(time.strftime("%M"))
 
@@ -1082,8 +1115,7 @@ class PyAlarm(Gtk.Application):
 	else:
 		bCMonth = 1
 
-	
-        if not bCMonth == 1:
+        if not bCMonth:
                 return 0
 
         bCDay = 0
@@ -1098,14 +1130,15 @@ class PyAlarm(Gtk.Application):
         if not bCDay:
                 return 0
 
-	if not int(sCron[2]) == nCHour:
-		return 0
+	if not sCron[2] == "*":
+		if not int(sCron[2]) == nCHour:
+			return 0
 
         if not int(sCron[1]) == nCMinutes:
                 return 0
 
 	app.sAlarmStarted = sAlarmID
-	app.play_alarm(sAlarmID, sName, sSound)
+	app.play_alarm(sName, sSound)
 
     def check_alarm(self):
         config = ConfigParser.ConfigParser()
@@ -1170,7 +1203,7 @@ class Application(Gtk.ApplicationWindow):
 
         self.bwAddAlarmActive = 0
         self.bwListAlarmsActive = 0
-	
+
 	self.bAlarmOn = 0
 	self.nAlarmMin = 0
         self.sAlarmStopped = ""
@@ -1196,13 +1229,13 @@ class Application(Gtk.ApplicationWindow):
 
 	while True:
 		app.alarm.check_alarm()
-		
+
 		time.sleep(0.1)
 
 		while Gtk.events_pending():
 			Gtk.main_iteration()
 			#Gtk.main()
-	
+
 		if app.bAlarmOn:
 			indicator.set_icon(app.sActiveIcon)
 		else:
@@ -1232,10 +1265,6 @@ class Application(Gtk.ApplicationWindow):
 	item_add.connect('activate', self.add_alarm)
 	menu.append(item_add)
 
-	#item_trigger = Gtk.MenuItem('Trigger alarm')
-	#item_trigger.connect('activate', self.play_alarm)
-	#play_alarmmenu.append(item_trigger)
-
 	separator = Gtk.SeparatorMenuItem()
 	menu.append(separator)
 
@@ -1255,9 +1284,12 @@ class Application(Gtk.ApplicationWindow):
 	process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 
 	app.bAlarmOn = 0
-	app.sAlarmStopped = app.sAlarmStarted
+	if app.nAlarmMin == int(time.strftime("%M")):
+		app.sAlarmStopped = app.sAlarmStarted
+	else:
+		app.sAlarmStopped = ""
 
-    def play_alarm(self, sAlarmID, sName, sSoundFile):
+    def play_alarm(self, sName, sSoundFile):
 	#print "Play alarm"
 
 	if not app.bAlarmOn:
@@ -1288,7 +1320,7 @@ class Application(Gtk.ApplicationWindow):
 		bashCommand = "/bin/chmod u+x " + sScript
 		process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 
-		bashCommand = "bash " + sScript
+		bashCommand = "/bin/bash " + sScript
 		process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 
     def list_alarms(self, widget):
