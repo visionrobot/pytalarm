@@ -1,0 +1,37 @@
+pyalarm is an alarm clock application for the gnome desktop written in python. If gnome-panel or the Gnome desktop is installed the following supplementary packages are needed for Debian Linux:
+
+apt-get install python-gi gir1.2-notify-0.7 gir1.2-appindicator3-0.1 alsa-utils
+
+
+The application is using among others the following Gtk widgets:
+
+- for Gtk.ApplicationWindow the title, size, position and used.
+
+- for Gtk.CheckButton widgets the set_active attribute are activated in code and the "toggled" action is connected.
+
+- for Gtk.Button widget the "clicked" action is connected
+
+- for Gtk.Entry widget the set_text and get_text attribute is used
+
+- for Gtk.Calendar widget the "day_selected" action is connected.
+
+- for Gtk.SpinButton widget the Gtk.Adjustment is used to set the settings and the "value_changed" action is connected
+
+- for Gtk.ComboBoxText widget the "changed" action is connected amd the list is populated with the append_text attribute
+
+- for Gtk.ListStore widget is populated using the append attribute from a configuration file
+
+- Gtk.Grid, Gtk.CellRendererText and Gtk.TreeViewColumn widgets are used to create the headers of the list
+
+- for Gtk.TreeView widget the "row-activated" action is connected to edit the alarms from the list
+
+- a treeview selection is used with the get_selection attribute to modify the alarm list using the "changed" action.
+
+- different Gtk.Button are used together with the "clicked" action
+
+- an appication indicator and Gtk.MenuItem are used to create an indicator and an application menu.
+
+- the alarms are saved to a configuration file using the ConfigParser.
+
+- when the alarm is activated, a wav sound file is run using the aplay command.
+
