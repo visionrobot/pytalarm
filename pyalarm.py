@@ -59,8 +59,24 @@ class AlarmWindow(Gtk.ApplicationWindow):
         self.set_resizable(False)
 
     def delete_event(self, window, event):
-	window.hide()
+	app.alarm.save_window("windowAddAlarm")
 	app.bwAddAlarmActive = 0
+	window.hide()
+
+class AboutWindow(Gtk.ApplicationWindow):
+
+    def __init__(self):
+        Gtk.Window.__init__(self, title="About")
+
+        self.set_border_width(5)
+        self.connect("delete-event", self.delete_event)
+
+        self.set_resizable(False)
+
+    def delete_event(self, window, event):
+	app.alarm.save_window("windowAbout")
+	app.bwAboutActive = 0
+        window.hide()
 
 class SchedWindow(Gtk.ApplicationWindow):
 
@@ -73,6 +89,8 @@ class SchedWindow(Gtk.ApplicationWindow):
         self.set_resizable(True)
 
     def delete_event(self, window, event):
+	app.bwSchedActive = 0
+	app.alarm.save_window("windowSched")
 	window.hide()
 
 class PyAlarm(Gtk.Application):
@@ -90,13 +108,9 @@ class PyAlarm(Gtk.Application):
 	self.init_settings()
 
 	self.windowAddAlarm = None
-	self.bwAddAlarmActive = 0
-
-	self.sched_window = None
-	self.bwSchedActive = 0
-
+	self.windowSched = None
 	self.windowListAlarms = None
-	self.bwListAlarmsActive = 0
+	self.windowAbout = None
 
         self.marked_date = 31*[0]
 
@@ -420,23 +434,13 @@ class PyAlarm(Gtk.Application):
         if not config.has_section(sSection):
                config.add_section(sSection)
 
-        if sWName == "windowAddAlarm":
-		(x, y) = self.windowAddAlarm.get_position()
-                config.set(sSection,sWName + 'X', x)
-                config.set(sSection,sWName + 'Y', y)
+	exec("(x, y) = self.%s.get_position()" % (sWName))
+        config.set(sSection,sWName + 'X', x)
+        config.set(sSection,sWName + 'Y', y)
 
-		(w,h) = self.windowAddAlarm.get_size()
-                config.set(sSection,sWName + 'W', w)
-                config.set(sSection,sWName + 'H', h)
-
-        if sWName == "windowListAlarms":
-		(x, y) = self.windowListAlarms.get_position()
-                config.set(sSection,sWName + 'X', x)
-                config.set(sSection,sWName + 'Y', y)
-
-		(w,h) = self.windowListAlarms.get_size()
-                config.set(sSection,sWName + 'W', w)
-                config.set(sSection,sWName + 'H', h)
+	exec("(w, h) = self.%s.get_size()" % (sWName))
+        config.set(sSection,sWName + 'W', w)
+        config.set(sSection,sWName + 'H', h)
 
         config.write(cfgfile)
         cfgfile.close()
@@ -448,19 +452,23 @@ class PyAlarm(Gtk.Application):
 
 	sSection = "General"
 	if config.has_section(sSection):
-		if sWName == "windowAddAlarm":
-	                x = config.get(sSection,sWName + 'X')
-	                y = config.get(sSection,sWName + 'Y')
-			w = config.get(sSection,sWName + 'W')
-                        h = config.get(sSection,sWName + 'H')
-			return (int(x), int(y), int(w), int(h))
-
-		if sWName == "windowListAlarms":
-        	        x = config.get(sSection,sWName + 'X')
-	                y = config.get(sSection,sWName + 'Y')
+                try:
+                        x = config.get(sSection,sWName + 'X')
+                except:
+			x = 200
+                try:
+                        y = config.get(sSection,sWName + 'Y')
+                except:
+			y = 150
+                try:
                         w = config.get(sSection,sWName + 'W')
-                        h = config.get(sSection,sWName + 'H')
-			return (int(x), int(y), int(w), int(h))
+                except:
+			w = 400
+		try:
+			h = config.get(sSection,sWName + 'H')
+		except:
+			h = 300
+		return (int(x), int(y), int(w), int(h))
 	return (0, 0, 800, 600)
 
     def toggle_day(self, toggle, nCB):
@@ -593,15 +601,19 @@ class PyAlarm(Gtk.Application):
 	app.bwListAlarmsActive = 0
 
     def on_sched_clicked(self, widget):
-	if not self.bwSchedActive:
+	if not app.bwSchedActive:
 	        self.windowSched = SchedWindow()
 	        self.draw_gtk_sched(self.windowSched)
-		self.sched_window.show_all()
-		self.bwSchedActive = 1
+		(x,y,w,h) = self.restore_window("windowSched")
+                self.windowSched.move(x, y)
+                #self.windowSched.resize(w, h)
+		self.windowSched.show_all()
+		app.bwSchedActive = 1
 
     def on_sched_close_clicked(self, widget):
+	self.save_window("windowSched")
         self.windowSched.hide()
-	self.bwSchedActive = 0
+	app.bwSchedActive = 0
 
     def on_select_days_clicked(self, widget):
         for i in range(1,8):
@@ -644,7 +656,7 @@ class PyAlarm(Gtk.Application):
         window.move(width, height)
 
     def draw_gtk_sched(self, window):
-        self.sched_window = window
+        self.windowSched = window
 
         vboxS = Gtk.VBox(False, self.DEF_PAD)
         window.add(vboxS)
@@ -861,6 +873,7 @@ class PyAlarm(Gtk.Application):
         self.entryCron.set_text(self.sCronEntry)
 	self.entryCron.set_editable(0)
 	self.entryCron.connect("changed", self.entryCron_changed)
+	Gtk.Widget.set_tooltip_text(self.entryCron, "At the moment the cron settings are not available for edit")
         hboxCron.pack_start(self.entryCron, False, True, self.DEF_PAD)
 
         buttonInfo = Gtk.Button("Cron short info")
@@ -905,6 +918,7 @@ class PyAlarm(Gtk.Application):
 	# Activate the alarm
         self.toggleActive = Gtk.CheckButton("Activate the alarm")
         self.toggleActive.connect("toggled", self.toggle_active)
+	Gtk.Widget.set_tooltip_text(self.toggleActive, "Enable/Disable the alarm")
         vboxPd.pack_start(self.toggleActive, True, True, 0)
 
         bboxS = Gtk.HButtonBox ()
@@ -972,12 +986,12 @@ class PyAlarm(Gtk.Application):
 
 	alarm_liststore.set_sort_column_id(1, 0)
 
-	if i < 15:
-		i = i*50
+	if i < 10:
+		i = 350
 	else:
 		i = 500
 
-	window.set_default_size(700, i)
+	window.set_default_size(570, i)
 
         vboxW = Gtk.VBox(False, self.DEF_PAD)
         window.add(vboxW)
@@ -1027,7 +1041,7 @@ class PyAlarm(Gtk.Application):
 
         buttonAddAlarm = Gtk.Button("Add new alarm")
         buttonAddAlarm.connect("clicked", self.on_wListAlarms_addnew_clicked)
-        #buttonAddAlarm.grab_default()
+	#buttonAddAlarm.grab_default()
         hboxB.pack_start(buttonAddAlarm, False, False, self.DEF_PAD)
 
         buttonDelAlarm = Gtk.Button("Delete selected alarm")
@@ -1161,30 +1175,104 @@ class PyAlarm(Gtk.Application):
                         if bAlarmActive:
                                 self.isTimeToRun_alarm(sAlarmID, sName, sSound, sCron)
 
+    def draw_gtk_about(self, window):
+
+        vboxW = Gtk.VBox(False, self.DEF_PAD)
+        window.add(vboxW)
+
+	image = Gtk.Image()
+        image.set_from_file(app.sIcon)
+        image.show()
+	vboxW.pack_start(image, False, True, 0)
+
+        labelApp = Gtk.Label()
+	labelApp.set_markup("<big>" + app.sPyAlarmVersion + "</big>")
+        vboxW.pack_start(labelApp, False, True, 0)
+
+        hboxW1 = Gtk.HBox (False, 1)
+        vboxW.pack_start(hboxW1, False, True, 0)
+
+	labelGH = Gtk.Label()
+	labelGH.set_markup("For a new version go to: <a href=\"" + app.sPyAlarmURL + "\" "
+                         "title=\"Click to open the page\">" + app.sPyAlarmURL + "</a>.")
+        labelGH.set_line_wrap(True)
+	vboxW.pack_start(labelGH, False, True, 0)
+
+        hboxW2 = Gtk.HBox (False, 1)
+        vboxW.pack_start(hboxW2, False, True, 0)
+
+        labelName = Gtk.Label("Credit list:")
+        hboxW2.pack_start(labelName, False, True, 0)
+
+	sCreditText = "Copyright (C) visionrobot@gmail.com \n 2016 All rights reserved."
+
+        tvCredit = Gtk.TextView()
+        wTBCredit = Gtk.TextBuffer()
+        wTBCredit.set_text(sCreditText)
+        tvCredit.set_buffer(wTBCredit)
+        tvCredit.set_editable(0)
+        vboxW.pack_start(tvCredit, False, True, self.DEF_PAD)
+
+        hboxW2 = Gtk.HBox (False, 1)
+        vboxW.pack_start(hboxW2, False, True, 0)
+
+        labelLicense = Gtk.Label("License:")
+        hboxW2.pack_start(labelLicense, False, True, 0)
+
+	sLicenseText = "PyAlarm is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License \nas published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version. \n \nPyAlarm is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty \nof MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details."
+
+        tvLicense = Gtk.TextView()
+	wTBLicense = Gtk.TextBuffer()
+	wTBLicense.set_text(sLicenseText)
+	tvLicense.set_buffer(wTBLicense)
+	tvLicense.set_editable(0)
+        vboxW.pack_start(tvLicense, False, True, self.DEF_PAD)
+
+        bboxB = Gtk.HButtonBox ()
+        vboxW.pack_start(bboxB, False, False, 0)
+
+        hboxB = Gtk.HBox (False, 1)
+        bboxB.pack_start(hboxB, False, True, self.DEF_PAD)
+
+        buttonClose = Gtk.Button("Close")
+        buttonClose.connect("clicked", self.on_wAbout_close_clicked)
+        hboxB.pack_start(buttonClose, False, False, self.DEF_PAD)
+
+    def on_wAbout_close_clicked(self, widget):
+        self.save_window("windowAbout")
+        self.windowAbout.hide()
+        app.bwAboutActive = 0
+
     def addAlarm_activate(self):
 	#print "addAlarm_activate"
 
-        if not app.bwAddAlarmActive:
-                self.windowAddAlarm = AlarmWindow()
-                self.draw_gtk_addalarm(self.windowAddAlarm)
-                (x,y,w,h) = self.restore_window("windowAddAlarm")
-                self.windowAddAlarm.move(x, y)
-                self.windowAddAlarm.resize(w, h)
-                self.windowAddAlarm.show_all()
-                app.bwAddAlarmActive = 1
+	self.windowAddAlarm = AlarmWindow()
+	self.draw_gtk_addalarm(self.windowAddAlarm)
+	(x,y,w,h) = self.restore_window("windowAddAlarm")
+	self.windowAddAlarm.move(x, y)
+	self.windowAddAlarm.resize(w, h)
+	self.windowAddAlarm.show_all()
 
     def listAlarms_activate(self):
 	#print "listAlarms_activate"
 
-        if not app.bwListAlarmsActive:
-                self.windowListAlarms = ListWindow()
-                self.draw_gtk_listalarms(self.windowListAlarms)
-                (x,y,w,h) = self.restore_window("windowListAlarms")
-                self.windowListAlarms.move(x, y)
-                self.windowListAlarms.resize(w, h)
+	self.windowListAlarms = ListWindow()
+        self.draw_gtk_listalarms(self.windowListAlarms)
+        (x,y,w,h) = self.restore_window("windowListAlarms")
+        self.windowListAlarms.move(x, y)
+        self.windowListAlarms.resize(w, h)
 
-                self.windowListAlarms.show_all()
-                app.bwListAlarmsActive = 1
+        self.windowListAlarms.show_all()
+
+    def about_activate(self):
+
+        self.windowAbout = AboutWindow()
+        self.draw_gtk_about(self.windowAbout)
+        (x,y,w,h) = self.restore_window("windowAbout")
+        self.windowAbout.move(x, y)
+        #self.windowAbout.resize(w, h)
+
+        self.windowAbout.show_all()
 
     def do_activate(self):
 	#print "do_activate"
@@ -1203,6 +1291,8 @@ class Application(Gtk.ApplicationWindow):
 
         self.bwAddAlarmActive = 0
         self.bwListAlarmsActive = 0
+	self.bwSchedActive = 0
+	self.bwAboutActive = 0
 
 	self.bAlarmOn = 0
 	self.nAlarmMin = 0
@@ -1214,6 +1304,9 @@ class Application(Gtk.ApplicationWindow):
 
         self.sIcon = "/usr/share/pyalarm/icons/pyalarm.svg"
         self.sActiveIcon = "/usr/share/pyalarm/icons/pyalarm-active.svg"
+
+	self.sPyAlarmVersion = "Pyalarm 1.0.3"
+	self.sPyAlarmURL = "https://github.com/visionrobot/pyalarm"
 
     def start_indicator(self):
 	#sIcon = "/usr/share/pyalarm/icons/pyalarm.svg"
@@ -1249,6 +1342,7 @@ class Application(Gtk.ApplicationWindow):
 
 	item_stop = Gtk.MenuItem('Stop the alarm')
 	item_stop.connect('activate', self.stop_alarm)
+	Gtk.Widget.set_tooltip_text(item_stop, "Stop the alarm sound, if it is running")
 	menu.append(item_stop)
 
 	separator = Gtk.SeparatorMenuItem()
@@ -1256,6 +1350,7 @@ class Application(Gtk.ApplicationWindow):
 
 	item_show = Gtk.MenuItem('List alarms')
 	item_show.connect('activate', self.list_alarms)
+	Gtk.Widget.set_tooltip_text(item_show, "Manage your alarms")
 	menu.append(item_show)
 
 	separator = Gtk.SeparatorMenuItem()
@@ -1268,8 +1363,13 @@ class Application(Gtk.ApplicationWindow):
 	separator = Gtk.SeparatorMenuItem()
 	menu.append(separator)
 
+        item_about = Gtk.MenuItem('About')
+        item_about.connect('activate', self.about)
+        menu.append(item_about)
+
 	item_quit = Gtk.MenuItem('Quit')
 	item_quit.connect('activate', self.app_quit)
+	Gtk.Widget.set_tooltip_text(item_quit, "Quit the application")
 	menu.append(item_quit)
 
 	menu.show_all()
@@ -1328,17 +1428,24 @@ class Application(Gtk.ApplicationWindow):
 
 	if not app.bwListAlarmsActive:
 		app.alarm = PyAlarm()
-		app.alarm.listAlarms_activate()
 		app.bwListAlarmsActive = 1
+		app.alarm.listAlarms_activate()
 
     def add_alarm(self, widget):
 	#print "Add alarm"
 
 	if not app.bwAddAlarmActive:
 		app.alarm = PyAlarm()
-		app.alarm.addAlarm_activate()
 		app.bwAddAlarmActive = 1
+		app.alarm.addAlarm_activate()
 	return 0
+
+    def about(self, widget):
+        if not app.bwAboutActive:
+                app.alarm = PyAlarm()
+		app.bwAboutActive = 1
+                app.alarm.about_activate()
+        return 0
 
     def app_quit(self, widget):
 	#print quit
