@@ -520,19 +520,7 @@ class PyAlarm(Gtk.Application):
         dialog.destroy()
 
     def toggle_active(self, toggle):
-	if toggle.get_active():
-		self.bAlarmActive = 1
-	else:
-		self.bAlarmActive = 0
-	#print self.bAlarmActive
-
-	self.save_strings()
-
-    def on_switch_activated(self, widget, gparam):
-        if self.switchActive.get_active():
-            self.bAlarmActive = 1
-        else:
-	    self.bAlarmActive = 0
+	self.bAlarmActive = toggle.get_active()
 	#print self.bAlarmActive
 
 	self.save_strings()
@@ -928,12 +916,10 @@ class PyAlarm(Gtk.Application):
         buttonSave = Gtk.Button("Save the alarm")
         buttonSave.connect("clicked", self.save_alarm, self.labelDateTime)
         bboxS.add(buttonSave)
-        #buttonSave.grab_default()
 
         buttonCancel = Gtk.Button("Cancel")
 	buttonCancel.connect("clicked", self.on_wAddAlarm_close_clicked)
         bboxS.add(buttonCancel)
-        #buttonCancel.grab_default()
 
 	if self.bAddAlarmMode:
 		self.sName = self.entryName.get_text()
@@ -944,9 +930,22 @@ class PyAlarm(Gtk.Application):
                 self.comboSound.set_active(3)
 
 		self.toggleActive.set_active(1)
-                self.bAlarmActive = 1
+                self.bAlarmActive = True
 
 		self.save_strings()
+
+    def toggled_callback(self, cell, path, column):
+	self.alarm_liststore[path][column] = not self.alarm_liststore[path][column]
+
+	cfgfile = open(self.sConfigFile, 'a')
+        config = ConfigParser.ConfigParser()
+        config.read(self.sConfigFile)
+
+        configSection = self.alarm_liststore[path][0]
+	bAlarmActive = self.alarm_liststore[path][column]
+	config.set(configSection,'Active', bAlarmActive)
+	config.write(cfgfile)
+        cfgfile.close()
 
     def draw_gtk_listalarms(self, window):
 	#print "draw_gtk_listalarms"
@@ -954,7 +953,7 @@ class PyAlarm(Gtk.Application):
 	config = ConfigParser.ConfigParser()
 	config.read(self.sConfigFile)
 
-	alarm_liststore = Gtk.ListStore(str, str, str, str, str, str, str)
+	self.alarm_liststore = Gtk.ListStore(str, str, str, str, str, str, bool)
         self.current_filter = None
 
 	sCron = 6*[0]
@@ -972,19 +971,14 @@ class PyAlarm(Gtk.Application):
 			sCron[4] = config.get(sAlarmID, 'ScheduleMonths')
 			sCron[5] = config.get(sAlarmID, 'ScheduleDOW')
 			sSound = config.get(sAlarmID, 'Sound')
-			bAlarmActive = config.getint(sAlarmID, 'Active') 
+			bAlarmActive = config.getboolean(sAlarmID, 'Active') 
 
-			if bAlarmActive:
-				sAlarmActive = "Active"
-			else:
-				sAlarmActive = "Inactive"
-
-			sList = [(sAlarmID, sName, sCron[2] + ":" + sCron[1], sCron[3], sCron[4], sCron[5], sAlarmActive)]
+			sList = [(sAlarmID, sName, sCron[2] + ":" + sCron[1], sCron[3], sCron[4], sCron[5], bAlarmActive)]
 
 	        	for alarm_ref in sList:
-		            alarm_liststore.append(list(alarm_ref))
+		            self.alarm_liststore.append(list(alarm_ref))
 
-	alarm_liststore.set_sort_column_id(1, 0)
+	self.alarm_liststore.set_sort_column_id(1, 0)
 
 	if i < 10:
 		i = 350
@@ -1007,17 +1001,25 @@ class PyAlarm(Gtk.Application):
         grid.set_row_homogeneous(True)
 	vboxW.pack_start(grid, False, True, self.DEF_PAD)
 
-	self.filter = alarm_liststore.filter_new()
+	self.filter = self.alarm_liststore.filter_new()
         self.treeview = Gtk.TreeView.new_with_model(self.filter)
 	self.treeview.set_headers_clickable(True)
 	for i, column_title in enumerate(["Id", "Name", "Time", "Days ", "Months", "Day of week", "Active"]):
-            renderer = Gtk.CellRendererText()
-            column = Gtk.TreeViewColumn(column_title, renderer, text=i)
+	    if column_title == "Active":
+		renderer = Gtk.CellRendererToggle()
+		renderer.connect('toggled', self.toggled_callback, 6)
+		column = Gtk.TreeViewColumn(column_title, renderer, active=i)
+	    else:
+		renderer = Gtk.CellRendererText()
+	    	column = Gtk.TreeViewColumn(column_title, renderer, text=i)
+
 	    #if column_title == "Name":
 		#column.set_clickable(True)
             	#column.set_sort_column_id(0)
 		#column.set_sort_indicator(True)
+
             self.treeview.append_column(column)
+
 	    if column_title == "Id":
 		    column.set_visible(False)
 
@@ -1078,7 +1080,7 @@ class PyAlarm(Gtk.Application):
 	self.sHour = self.sCron[2]
 
         self.sSound = config.get(configSection, 'Sound')
-        self.bAlarmActive = config.getint(configSection, 'Active')
+        self.bAlarmActive = config.getboolean(configSection, 'Active')
 
 	# create the window and the widgets
         self.windowAddAlarm = AlarmWindow()
@@ -1170,7 +1172,7 @@ class PyAlarm(Gtk.Application):
                         sCron[4] = config.get(sAlarmID, 'ScheduleMonths')
                         sCron[5] = config.get(sAlarmID, 'ScheduleDOW')
                         sSound = config.get(sAlarmID, 'Sound')
-                        bAlarmActive = config.getint(sAlarmID, 'Active')
+                        bAlarmActive = config.getboolean(sAlarmID, 'Active')
 
                         if bAlarmActive:
                                 self.isTimeToRun_alarm(sAlarmID, sName, sSound, sCron)
