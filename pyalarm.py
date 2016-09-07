@@ -1297,7 +1297,7 @@ class Application(Gtk.ApplicationWindow):
 	self.bwAboutActive = 0
 
 	self.bAlarmOn = 0
-	self.nAlarmMin = 0
+	self.nAlarmTs = 0
         self.sAlarmStopped = ""
 	self.sAlarmStarted = ""
 
@@ -1307,7 +1307,7 @@ class Application(Gtk.ApplicationWindow):
         self.sIcon = "/usr/share/pyalarm/icons/pyalarm.svg"
         self.sActiveIcon = "/usr/share/pyalarm/icons/pyalarm-active.svg"
 
-	self.sPyAlarmVersion = "Pyalarm 1.0.3"
+	self.sPyAlarmVersion = "Pyalarm 1.0.4"
 	self.sPyAlarmURL = "https://github.com/visionrobot/pyalarm"
 
     def start_indicator(self):
@@ -1386,7 +1386,8 @@ class Application(Gtk.ApplicationWindow):
 	process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 
 	app.bAlarmOn = 0
-	if app.nAlarmMin == int(time.strftime("%M")):
+	nAlarmTs2 = time.time()
+	if (nAlarmTs2 - app.nAlarmTs < 61):
 		app.sAlarmStopped = app.sAlarmStarted
 	else:
 		app.sAlarmStopped = ""
@@ -1395,13 +1396,15 @@ class Application(Gtk.ApplicationWindow):
 	#print "Play alarm"
 
 	if not app.bAlarmOn:
-		if app.sAlarmStarted == app.sAlarmStopped:
+		nAlarmTs2 = time.time()
+		if (nAlarmTs2 - app.nAlarmTs < 61):
 			return 0
 
 		app.bAlarmOn = 1
-		app.nAlarmMin = int(time.strftime("%M"))
+		app.nAlarmTs = time.time()
 	else:
-		if not app.nAlarmMin == int(time.strftime("%M")) :
+		nAlarmTs2 = time.time()
+		if (nAlarmTs2 - app.nAlarmTs > 61):
 			app.bAlarmOn = 0
 		return 0
 
