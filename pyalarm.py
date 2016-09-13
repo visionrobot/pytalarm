@@ -19,6 +19,7 @@ import ConfigParser
 
 import time
 from time import sleep
+from threading import Timer
 
 import sys
 import signal
@@ -37,14 +38,9 @@ class ListWindow(Gtk.ApplicationWindow):
 
         self.set_border_width(5)
 	self.connect("delete-event", self.delete_event)
-        #self.connect("delete-event", Gtk.main_quit)
-        #self.connect("destroy", lambda x: Gtk.main_quit())
-
-	#self.set_default_size(500, 500)
         self.set_resizable(True)
 
     def delete_event(self, window, event):
-        #Gtk.main_quit()
         window.hide()
 	app.bwListAlarmsActive = 0
 
@@ -98,8 +94,6 @@ class PyAlarm(Gtk.Application):
     DEF_PAD_SMALL = 5
 
     def __init__(self):
-        #print "init AddAlarm"
-
         Gtk.Application.__init__(self)
 
 	self.bStartLoad = 1
@@ -192,8 +186,6 @@ class PyAlarm(Gtk.Application):
 		self.load_settings()
 
     def load_settings(self):
-	#print "load settings"
-
 	self.bStartLoad = 1
 
 	self.entryName.set_text(self.sName)
@@ -245,7 +237,7 @@ class PyAlarm(Gtk.Application):
 	self.toggleActive.set_active(self.bAlarmActive)
 
         self.sSettings = self.sName + " | " + self.sCronEntry + " | " + self.sSound + " | " + str(self.bAlarmActive);
-        self.labelDateTime.set_text(self.sSettings)
+        #self.labelAlarmInfo.set_text(self.sSettings)
 
     def save_strings(self):
         if self.bCalendarSelected:
@@ -260,7 +252,6 @@ class PyAlarm(Gtk.Application):
 	else:
 	        self.sHour = self.spinnerHour.get_value_as_int()
         self.sMinutes = self.spinnerMinutes.get_value_as_int()
-        #self.sDateTime = self.sDateTime + str(self.sHour) + ":" +  str(self.sMinutes)
 
 	self.sound_save()
 	self.entryCron_update()
@@ -268,7 +259,7 @@ class PyAlarm(Gtk.Application):
 	self.toggleActive.set_active(self.bAlarmActive)
 
         self.sSettings = self.sName + " | " + self.sCronEntry + " | " + self.sSound + " | " + str(self.bAlarmActive);
-        self.labelDateTime.set_text(self.sSettings)
+        #self.labelAlarmInfo.set_text(self.sSettings)
 
     def toggle_each_hour(self, widget):
 	if self.toggleEachHour.get_active():
@@ -369,13 +360,12 @@ class PyAlarm(Gtk.Application):
 
 	self.save_strings()
 
-    def save_alarm(self, widget, label):
-	#print "save_alarm"
+    def save_alarm(self, widget):
 
         self.save_strings()
 
         buf = "%s" % (str(self.sSettings))
-        label.set_text(buf)
+        #self.labelAlarmInfo.set_text(buf)
 
 	config = ConfigParser.ConfigParser()
 	config.read(self.sConfigFile)
@@ -469,7 +459,7 @@ class PyAlarm(Gtk.Application):
 		except:
 			h = 300
 		return (int(x), int(y), int(w), int(h))
-	return (0, 0, 800, 600)
+	return (200, 150, 400, 300)
 
     def toggle_day(self, toggle, nCB):
         i = nCB
@@ -515,7 +505,7 @@ class PyAlarm(Gtk.Application):
             Gtk.ButtonsType.OK, "Cron info")
         dialog.format_secondary_text(
             #"You can replace each star in the cron settings with the following values: \n
-	    "At the moment the cron settings are not availabe for edit \nmin | hour | day of month (1-31) | month (1-12) | day of week (0 - 7) \n*    | *       | *                               | *                      | *")
+	    "At the moment the cron settings are not availabe for edit \nmin | hour | day of month (1-31) | month (1-12) | day of week (0 - 7) \n*     | *      | *                             | *                    | *")
         dialog.run()
         dialog.destroy()
 
@@ -776,8 +766,6 @@ class PyAlarm(Gtk.Application):
         framePtd.add(vboxC)
 
         self.calendar = Gtk.Calendar()
-        #self.calendar.mark_day(19)
-        #self.marked_date[19-1] = 1
         vboxC.add(self.calendar)
         self.calendar.connect("day_selected", self.calendar_selected)
 
@@ -875,14 +863,14 @@ class PyAlarm(Gtk.Application):
         vboxPd = Gtk.VBox(True, self.DEF_PAD_SMALL)
         framePd.add(vboxPd)
 
-        hboxPd = Gtk.HBox (False, 3)
-        vboxPd.pack_start(hboxPd, False, True, 0)
+        #hboxPd = Gtk.HBox (False, 3)
+        #vboxPd.pack_start(hboxPd, False, True, 0)
 
-        labelAlarm = Gtk.Label("Alarm:")
-        hboxPd.pack_start(labelAlarm, False, True, 0)
+        #labelAlarm = Gtk.Label("Alarm:")
+        #hboxPd.pack_start(labelAlarm, False, True, 0)
 
-        self.labelDateTime = Gtk.Label("")
-        hboxPd.pack_start(self.labelDateTime, False, True, 0)
+        #self.labelAlarmInfo = Gtk.Label("")
+        #hboxPd.pack_start(self.labelAlarmInfo, False, True, 0)
 
 	# Sound played by the alarm
         hboxSound = Gtk.HBox (False, 3)
@@ -914,7 +902,7 @@ class PyAlarm(Gtk.Application):
 
 	# Save the settings
         buttonSave = Gtk.Button("Save the alarm")
-        buttonSave.connect("clicked", self.save_alarm, self.labelDateTime)
+        buttonSave.connect("clicked", self.save_alarm)
         bboxS.add(buttonSave)
 
         buttonCancel = Gtk.Button("Cancel")
@@ -1286,6 +1274,31 @@ class PyAlarm(Gtk.Application):
 
         Gtk.Application.do_startup(self)
 
+class RepeatedTimer(object):
+    def __init__(self, interval, function, *args, **kwargs):
+        self._timer     = None
+        self.interval   = interval
+        self.function   = function
+        self.args       = args
+        self.kwargs     = kwargs
+        self.is_running = False
+        self.start()
+
+    def _run(self):
+        self.is_running = False
+        self.start()
+        self.function(*self.args, **self.kwargs)
+
+    def start(self):
+        if not self.is_running:
+            self._timer = Timer(self.interval, self._run)
+            self._timer.start()
+            self.is_running = True
+
+    def stop(self):
+        self._timer.cancel()
+        self.is_running = False
+
 class Application(Gtk.ApplicationWindow):
 
     def __init__(self):
@@ -1307,34 +1320,29 @@ class Application(Gtk.ApplicationWindow):
         self.sIcon = "/usr/share/pyalarm/icons/pyalarm.svg"
         self.sActiveIcon = "/usr/share/pyalarm/icons/pyalarm-active.svg"
 
-	self.sPyAlarmVersion = "Pyalarm 1.0.4"
+	self.sPyAlarmVersion = "Pyalarm 1.0.5"
 	self.sPyAlarmURL = "https://github.com/visionrobot/pyalarm"
 
     def start_indicator(self):
-	#sIcon = "/usr/share/pyalarm/icons/pyalarm.svg"
-	indicator = appindicator.Indicator.new(APPINDICATOR_ID, app.sIcon, appindicator.IndicatorCategory.SYSTEM_SERVICES)
+	self.indicator = appindicator.Indicator.new(APPINDICATOR_ID, app.sIcon, appindicator.IndicatorCategory.APPLICATION_STATUS)
 
-	indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
-	indicator.set_menu(self.build_menu())
+	self.indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
+	self.indicator.set_menu(self.build_menu())
 	notify.init(APPINDICATOR_ID)
 
 	notify.Notification.new("Message", "Pyalarm window is hidden", None).show()
 
-	#Gdk.threads_init()
+	self.rt = RepeatedTimer(1, app.alarm.check_alarm)
+	try:
+		Gtk.main()
+	finally:
+       		self.rt.stop()
 
-	while True:
-		app.alarm.check_alarm()
-
-		time.sleep(0.1)
-
-		while Gtk.events_pending():
-			Gtk.main_iteration()
-			#Gtk.main()
-
-		if app.bAlarmOn:
-			indicator.set_icon(app.sActiveIcon)
-		else:
-			indicator.set_icon(app.sIcon)
+	#while True:
+	#	app.alarm.check_alarm()
+	#	time.sleep(0.1)
+	#	while Gtk.events_pending():
+	#		Gtk.main_iteration()
 
         if os.path.isfile(app.pidfile):
                 os.unlink(app.pidfile)
@@ -1375,7 +1383,6 @@ class Application(Gtk.ApplicationWindow):
 	menu.append(item_quit)
 
 	menu.show_all()
-	#Gtk.MenuItem('Trigger alarm').activate();
 
 	return menu
 
@@ -1386,6 +1393,8 @@ class Application(Gtk.ApplicationWindow):
 	process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 
 	app.bAlarmOn = 0
+	app.indicator.set_icon(app.sIcon)
+
 	nAlarmTs2 = time.time()
 	if (nAlarmTs2 - app.nAlarmTs < 61):
 		app.sAlarmStopped = app.sAlarmStarted
@@ -1395,18 +1404,20 @@ class Application(Gtk.ApplicationWindow):
     def play_alarm(self, sName, sSoundFile):
 	#print "Play alarm"
 
-	if not app.bAlarmOn:
+	if app.bAlarmOn:
+                nAlarmTs2 = time.time()
+                if (nAlarmTs2 - app.nAlarmTs > 61):
+                        app.bAlarmOn = 0
+                        app.indicator.set_icon(app.sIcon)
+                return 0
+	else:
 		nAlarmTs2 = time.time()
 		if (nAlarmTs2 - app.nAlarmTs < 61):
 			return 0
 
 		app.bAlarmOn = 1
 		app.nAlarmTs = time.time()
-	else:
-		nAlarmTs2 = time.time()
-		if (nAlarmTs2 - app.nAlarmTs > 61):
-			app.bAlarmOn = 0
-		return 0
+		app.indicator.set_icon(app.sActiveIcon)
 
 	notify.Notification.new("Alarm: ", sName, app.sIcon).show()
 
@@ -1435,6 +1446,8 @@ class Application(Gtk.ApplicationWindow):
 		app.alarm = PyAlarm()
 		app.bwListAlarmsActive = 1
 		app.alarm.listAlarms_activate()
+	else:
+		app.alarm.windowListAlarms.present()
 
     def add_alarm(self, widget):
 	#print "Add alarm"
@@ -1443,6 +1456,8 @@ class Application(Gtk.ApplicationWindow):
 		app.alarm = PyAlarm()
 		app.bwAddAlarmActive = 1
 		app.alarm.addAlarm_activate()
+	else:
+		app.alarm.windowAddAlarm.present()
 	return 0
 
     def about(self, widget):
@@ -1450,14 +1465,23 @@ class Application(Gtk.ApplicationWindow):
                 app.alarm = PyAlarm()
 		app.bwAboutActive = 1
                 app.alarm.about_activate()
+	else:
+		app.alarm.windowAbout.present()
         return 0
 
     def app_quit(self, widget):
 	#print quit
+
+	# stop the alarm thread
+	self.rt.stop()
+
 	notify.uninit()
+
 	if os.path.isfile(app.pidfile):
 		os.unlink(app.pidfile)
+
 	Gtk.main_quit()
+
 	quit()
 
 def main():
