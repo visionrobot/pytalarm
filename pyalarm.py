@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# alarm.py
+# pyalarm.py
 
 # Description: A simple Python program to make the computer act
 # like an alarm clock.
@@ -1320,7 +1320,7 @@ class Application(Gtk.ApplicationWindow):
         self.sIcon = "/usr/share/pyalarm/icons/pyalarm.svg"
         self.sActiveIcon = "/usr/share/pyalarm/icons/pyalarm-active.svg"
 
-	self.sPyAlarmVersion = "Pyalarm 1.0.5"
+	self.sPyAlarmVersion = "Pyalarm 1.0.6"
 	self.sPyAlarmURL = "https://github.com/visionrobot/pyalarm"
 
     def start_indicator(self):
@@ -1493,12 +1493,23 @@ if __name__ == "__main__":
 	app = Application()
 
 	pid = str(os.getpid())
-	#print app.pidfile
 
 	if os.path.isfile(app.pidfile):
-	    print "%s already exists, exiting" % app.pidfile
-	    sys.exit()
+	    print "%s already exists" % app.pidfile
+	    f=open (app.pidfile,"r")
+	    for line in f:
+	  	sPid=line.strip().lower()
+
+	    try:
+                os.kill(int(sPid), 0)
+            except OSError:
+		if os.path.isfile(app.pidfile):
+                	os.unlink(app.pidfile)
+	    else:
+	    	sys.exit()
+
 	file(app.pidfile, 'w').write(pid)
+
 	try:
         	app.alarm = PyAlarm()
 	        app.start_indicator()
