@@ -1419,7 +1419,7 @@ class Application(Gtk.ApplicationWindow):
 		app.nAlarmTs = time.time()
 		app.indicator.set_icon(app.sActiveIcon)
 
-	notify.Notification.new("Alarm: ", sName, app.sIcon).show()
+	notify.Notification.new("Alarm: " + time.strftime("%H:%M") + " " , sName, app.sIcon).show()
 
 	sScript = "/dev/shm/alarm.sh"
 
