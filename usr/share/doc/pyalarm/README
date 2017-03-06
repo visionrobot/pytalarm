@@ -1,0 +1,23 @@
+Pyalarm
+=======
+Original authors:   Mihai Pintea <visionrobot@gmail.com>
+
+New Versions
+============
+
+New versions of this package can be found at:
+  https://github.com/visionrobot/pyalarm/
+
+Requirements
+============
+  * python 2.7 or higher
+  * alsa-utils 1.0.28-1 or higher
+  * python-gi 3.14.0-1 or higher
+  * gir1.2-notify-0.7 0.7.6-2 or higher
+  * gir1.2-appindicator3-0.1 0.4.92-3.1 or higher
+
+Copyright Information
+=====================
+
+This software is covered by the GNU Lesser General Public Licence
+(version 2.1, or if you choose, a later version). 
