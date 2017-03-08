@@ -1,7 +1,7 @@
 pytalarm is an Gtk alarm clock application for the Gnome / Mate desktop written in python. 
 The following supplementary packages are needed for Debian Linux:
 
-apt-get install python-gi gir1.2-notify-0.7 gir1.2-appindicator3-0.1 alsa-utils
+apt-get install python-gi gir1.2-notify-0.7 gir1.2-appindicator3-0.1 alsa-utils notification-daemon mate-notification-daemon
 
 
 The application is using among others the following Gtk widgets:
