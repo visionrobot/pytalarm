@@ -2,7 +2,7 @@
 
 # pyalarm.py
 
-# Description: A simple Python program to make the computer act
+# Description: A Python program to make the computer act
 # like an alarm clock.
 
 import re
@@ -989,9 +989,10 @@ class PyAlarm(Gtk.Application):
         grid.set_row_homogeneous(True)
 	vboxW.pack_start(grid, False, True, self.DEF_PAD)
 
-	self.filter = self.alarm_liststore.filter_new()
-        self.treeview = Gtk.TreeView.new_with_model(self.filter)
+	self.filter = self.alarm_liststore.filter_new()   
+        self.treeview = Gtk.TreeView.new_with_model(self.alarm_liststore);
 	self.treeview.set_headers_clickable(True)
+
 	for i, column_title in enumerate(["Id", "Name", "Time", "Days ", "Months", "Day of week", "Active"]):
 	    if column_title == "Active":
 		renderer = Gtk.CellRendererToggle()
@@ -1001,10 +1002,9 @@ class PyAlarm(Gtk.Application):
 		renderer = Gtk.CellRendererText()
 	    	column = Gtk.TreeViewColumn(column_title, renderer, text=i)
 
-	    #if column_title == "Name":
-		#column.set_clickable(True)
-            	#column.set_sort_column_id(0)
-		#column.set_sort_indicator(True)
+	    column.set_clickable(True)
+            column.set_sort_indicator(True)
+	    column.set_sort_column_id(i)
 
             self.treeview.append_column(column)
 
@@ -1320,7 +1320,7 @@ class Application(Gtk.ApplicationWindow):
         self.sIcon = "/usr/share/pyalarm/icons/pyalarm.svg"
         self.sActiveIcon = "/usr/share/pyalarm/icons/pyalarm-active.svg"
 
-	self.sPyAlarmVersion = "Pyalarm 1.0.6"
+	self.sPyAlarmVersion = "Pyalarm 1.0.7"
 	self.sPyAlarmURL = "https://github.com/visionrobot/pyalarm"
 
     def start_indicator(self):
