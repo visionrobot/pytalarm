@@ -1,8 +1,6 @@
-Source files downloaded from https://github.com/visionrobot/pyalarm/
+Source files downloaded from https://github.com/visionrobot/pytalarm/
 
 Author: <visionrobot@gmail.com>
-
-Copyright:
 
 License:
 
@@ -22,7 +20,3 @@ License:
 
 On Debian systems, the complete text of the GNU General
 Public License can be found in `/usr/share/common-licenses/GPL-2'.
-
-The Debian packaging is Copyright 2008, Marco Rodrigues <gothicx@sapo.pt>
-and Copyright 2009, Ryan Niebur <ryanryan52@gmail.com>, and is licensed
-under the GPL 2 or later, see above.

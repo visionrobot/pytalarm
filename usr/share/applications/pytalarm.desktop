@@ -3,9 +3,9 @@ Version=1.0
 Name=Python Alarm Clock
 Comment=Schedule your tasks
 
-Exec=python /usr/bin/pyalarm.py
+Exec=python /usr/bin/pytalarm.py
 Terminal=false
 Type=Application
 Categories=GNOME;GTK;Utility;
-Icon=/usr/share/pyalarm/icons/pyalarm.svg
+Icon=/usr/share/pytalarm/icons/pytalarm.svg
 StartupNotify=false

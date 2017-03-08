@@ -1,5 +1,5 @@
 /* XPM */
-static char * pyalarm_xpm[] = {
+static char * pytalarm_xpm[] = {
 "32 32 408 2",
 "  	c None",
 ". 	c #484A48",

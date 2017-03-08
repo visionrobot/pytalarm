@@ -1,0 +1,5 @@
+?package(pytalarm):needs="X11" \
+  section="Applications/Project Management" \
+  title="Alarm Clock" \
+  command="/usr/bin/pytalarm.py" \
+  icon="/usr/share/pixmaps/pytalarm.xpm"
