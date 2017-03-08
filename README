@@ -1,4 +1,5 @@
-pyalarm is an alarm clock application for the gnome desktop written in python. If gnome-panel or the Gnome desktop is installed the following supplementary packages are needed for Debian Linux:
+pytalarm is an Gtk alarm clock application for the Gnome / Mate desktop written in python. 
+The following supplementary packages are needed for Debian Linux:
 
 apt-get install python-gi gir1.2-notify-0.7 gir1.2-appindicator3-0.1 alsa-utils
 
