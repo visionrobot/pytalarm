@@ -1,34 +1,33 @@
-pytalarm is an Gtk alarm clock application for the Gnome / Mate desktop written in python. 
+pytalarm is a Gtk alarm clock application for the Gnome / Mate desktop written in python. 
 The following supplementary packages are needed for Debian Linux:
 
-apt-get install python-gi gir1.2-notify-0.7 gir1.2-appindicator3-0.1 alsa-utils notification-daemon mate-notification-daemon
-
+ apt-get install python-gi gir1.2-notify-0.7 gir1.2-appindicator3-0.1 alsa-utils notification-daemon mate-notification-daemon
 
 The application is using among others the following Gtk widgets:
 
-- for Gtk.ApplicationWindow the title, size, position and used.
+- for Gtk.ApplicationWindow the title, size and position are used.
 
-- for Gtk.CheckButton widgets the set_active attribute are activated in code and the "toggled" action is connected.
+- for the Gtk.CheckButton widgets the set_active attribute are activated in code and the "toggled" action is connected.
 
-- for Gtk.Button widget the "clicked" action is connected
+- for the Gtk.Button widget the "clicked" action is connected.
 
-- for Gtk.Entry widget the set_text and get_text attribute is used
+- for the Gtk.Entry widget the set_text and get_text attribute are used.
 
-- for Gtk.Calendar widget the "day_selected" action is connected.
+- for the Gtk.Calendar widget the "day_selected" action is connected.
 
-- for Gtk.SpinButton widget the Gtk.Adjustment is used to set the settings and the "value_changed" action is connected
+- the Gtk.SpinButton widget the Gtk.Adjustment is used to set the settings and the "value_changed" action is connected.
 
-- for Gtk.ComboBoxText widget the "changed" action is connected amd the list is populated with the append_text attribute
+- for the Gtk.ComboBoxText widget the "changed" action is connected amd the list is populated with the append_text attribute.
 
-- for Gtk.ListStore widget is populated using the append attribute from a configuration file
+- the Gtk.ListStore widget it is populated using the append attribute from a configuration file.
 
-- Gtk.Grid, Gtk.CellRendererText and Gtk.TreeViewColumn widgets are used to create the headers of the list
+- the Gtk.Grid, Gtk.CellRendererText and Gtk.TreeViewColumn widgets are used to create the headers of the list.
 
-- for Gtk.TreeView widget the "row-activated" action is connected to edit the alarms from the list
+- for the Gtk.TreeView widget the "row-activated" action is connected to edit the alarms from the list.
 
 - a treeview selection is used with the get_selection attribute to modify the alarm list using the "changed" action.
 
-- different Gtk.Button are used together with the "clicked" action
+- different Gtk.Button are used together with the "clicked" action.
 
 - an appication indicator and Gtk.MenuItem are used to create an indicator and an application menu.
 
