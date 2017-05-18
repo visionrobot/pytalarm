@@ -266,6 +266,16 @@ class PytAlarm(Gtk.Application):
         self.sSettings = self.sName + " | " + self.sCronEntry + " | " + self.sSound + " | " + str(self.bAlarmActive);
         #self.labelAlarmInfo.set_text(self.sSettings)
 
+    def setsHour(self):
+	self.sHour = self.spinnerHour.get_value_as_int()
+	if int(self.sHour) < 10:
+		self.sHour = "0" + str(self.sHour)
+
+    def setsMinutes(self):
+        self.sMinutes = self.spinnerMinutes.get_value_as_int()
+        if int(self.sMinutes) < 10:
+                self.sMinutes = "0" + str(self.sMinutes)
+
     def save_strings(self):
         if self.bCalendarSelected:
                 self.sDateTime = str(self.sDate) + " "
@@ -277,8 +287,8 @@ class PytAlarm(Gtk.Application):
 	if self.toggleEachHour.get_active():
 		self.sHour = "*"
 	else:
-	        self.sHour = self.spinnerHour.get_value_as_int()
-        self.sMinutes = self.spinnerMinutes.get_value_as_int()
+		self.setsHour()
+	self.setsMinutes()
 
 	self.sound_save()
 	self.entryCron_update()
@@ -293,8 +303,8 @@ class PytAlarm(Gtk.Application):
 		self.bAddHM = 1
 		self.toggleAddHM.set_active(0)
 
-                self.sHour = self.spinnerHour.get_value_as_int()
-	        self.sMinutes = self.spinnerMinutes.get_value_as_int()
+		self.setsHour()
+		self.setsMinutes()
 
 		bMinInCron = 0
 	        if "," in str(self.sCron[1]):
@@ -331,7 +341,7 @@ class PytAlarm(Gtk.Application):
 		self.sHour = "*"
 		self.sCron[2] = "*"
 	else:
-		self.sHour = self.spinnerHour.get_value_as_int()
+                self.setsHour()
 
 	self.save_strings()
 
@@ -411,8 +421,8 @@ class PytAlarm(Gtk.Application):
 	if self.toggleEachHour.get_active():
 		self.sHour = "*"
 	else:
-		self.sHour = self.spinnerHour.get_value_as_int()
-        self.sMinutes = self.spinnerMinutes.get_value_as_int()
+                self.setsHour()
+        self.setsMinutes()
 
 	self.save_strings()
 
@@ -431,6 +441,24 @@ class PytAlarm(Gtk.Application):
 		process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 
 	self.save_strings()
+
+    def wListAlarms_reload(self):
+        if app.bwListAlarmsActive:
+                # save the window coordinates
+                self.save_window("windowListAlarms")
+
+                self.windowListAlarms.destroy()
+                self.windowListAlarms = None
+
+                # restore the window coordinates
+                self.windowListAlarms = ListWindow()
+                (x,y,w,h) = self.restore_window("windowListAlarms")
+                self.windowListAlarms.move(x, y)
+                self.windowListAlarms.resize(w, h)
+
+                self.draw_gtk_listalarms(self.windowListAlarms)
+
+                self.windowListAlarms.show_all()
 
     def save_alarm(self, widget):
 
@@ -469,22 +497,51 @@ class PytAlarm(Gtk.Application):
 	self.windowAddAlarm.hide()
 	app.bwAddAlarmActive = 0
 
-	if app.bwListAlarmsActive:
-                # save the window coordinates
-                self.save_window("windowListAlarms")
+	self.wListAlarms_reload()
 
-		self.windowListAlarms.destroy()
-		self.windowListAlarms = None
+    def clone_alarm(self, widget):
 
-		# restore the window coordinates
-	        self.windowListAlarms = ListWindow()
-        	(x,y,w,h) = self.restore_window("windowListAlarms")
-	        self.windowListAlarms.move(x, y)
-		self.windowListAlarms.resize(w, h)
+        cfgFile = open(self.sConfigFile, 'a')
+        config = ConfigParser.ConfigParser()
+        config.read(self.sConfigFile)
 
-	        self.draw_gtk_listalarms(self.windowListAlarms)
+        model, treeiter = self.tree_selection.get_selected()
+        if treeiter != None:
+                #print "sAlarmID: " + model[treeiter][0]
+		sAlarmID = model[treeiter][0]
+	else:
+		return 1
 
-	        self.windowListAlarms.show_all()
+	sCron = 6*[0]
+        sName = config.get(sAlarmID, 'Name')
+        sCronEntry = config.get(sAlarmID, 'Cron')
+        sCron[1] = config.get(sAlarmID, 'ScheduleMinutes')
+        sCron[2] = config.get(sAlarmID, 'ScheduleHour')
+        sCron[3] = config.get(sAlarmID, 'ScheduleDays')
+        sCron[4] = config.get(sAlarmID, 'ScheduleMonths')
+        sCron[5] = config.get(sAlarmID, 'ScheduleDOW')
+        sSound = config.get(sAlarmID, 'Sound')
+        bAlarmActive = config.getboolean(sAlarmID, 'Active')
+
+        timestamp = time.time()
+	sNewAlarmID = 'Alarm_' + str(timestamp)
+
+        config.add_section(sNewAlarmID)
+        config.set(sNewAlarmID,'Name', sName)
+        config.set(sNewAlarmID,'Cron', sCronEntry)
+        config.set(sNewAlarmID,'ScheduleMinutes', sCron[1])
+        config.set(sNewAlarmID,'ScheduleHour', sCron[2])
+        config.set(sNewAlarmID,'ScheduleDays', sCron[3])
+        config.set(sNewAlarmID,'ScheduleMonths', sCron[4])
+        config.set(sNewAlarmID,'ScheduleDOW', sCron[5])
+        config.set(sNewAlarmID,'Sound', sSound)
+        config.set(sNewAlarmID,'Active', str(bAlarmActive))
+
+        copyfile(self.sConfigFile , self.sConfigFile + ".bak")
+        config.write(cfgFile)
+        cfgFile.close()
+
+	self.wListAlarms_reload()
 
     def save_window(self, sWName):
 
@@ -573,6 +630,12 @@ class PytAlarm(Gtk.Application):
 
 	self.entryCron_update()
 
+    def toggle_active(self, toggle):
+        self.bAlarmActive = toggle.get_active()
+        #print self.bAlarmActive
+
+        self.save_strings()
+
     def on_cronInfo_clicked(self, widget):
         dialog = Gtk.MessageDialog(self.windowAddAlarm, 0, Gtk.MessageType.INFO,
             Gtk.ButtonsType.OK, "Cron info")
@@ -582,40 +645,13 @@ class PytAlarm(Gtk.Application):
         dialog.run()
         dialog.destroy()
 
-    def toggle_active(self, toggle):
-	self.bAlarmActive = toggle.get_active()
-	#print self.bAlarmActive
-
-	self.save_strings()
-
     def on_wAddAlarm_close_clicked(self, widget):
         self.save_window("windowAddAlarm")
 	self.windowAddAlarm.hide()
 	app.bwAddAlarmActive = 0
 
-    def on_wListAlarms_addnew_clicked(self, widget):
-
-	if not app.bwAddAlarmActive:
-	        self.bAddAlarmMode = 1
-	        self.bStartLoad = 1
-
-	        self.init_settings()
-
-	        # create the window and the widgets
-	        self.windowAddAlarm = AlarmWindow()
-	        self.draw_gtk_addalarm(self.windowAddAlarm)
-	        (x,y,w,h) = self.restore_window("windowAddAlarm")
-	        self.windowAddAlarm.move(x, y)
-	        #self.windowAddAlarm.resize(w, h)
-		app.bwAddAlarmActive = 1
-
-        	self.windowAddAlarm.show_all()
-
-    def treeview_selection_changed(self, selection):
-	model, treeiter = selection.get_selected()
-	if treeiter != None:
-		self.selectedAlarm = str(model[treeiter][0])
-	        #print "You selected ", self.selectedAlarm
+    def on_wListAlarms_clone_clicked(self, widget):
+        self.clone_alarm(widget)
 
     def on_wListAlarms_del_clicked(self, widget):
 
@@ -1095,10 +1131,25 @@ class PytAlarm(Gtk.Application):
 	    if column_title == "Id":
 		    column.set_visible(False)
 
-	tree_selection = self.treeview.get_selection()
-	tree_selection.connect("changed", self.treeview_selection_changed)
+	self.tree_selection = self.treeview.get_selection()
+	self.tree_selection.connect("changed", self.on_treeview_selection_changed)
 
-	self.treeview.connect('row-activated', self.treeview_row_activated)
+	self.treeview.connect('row-activated', self.on_treeview_row_activated)
+	self.treeview.connect('button-press-event', self.on_treeview_button_press_event)
+
+	self.popup = Gtk.Menu()
+        menu_item_edit = Gtk.MenuItem("Edit")
+        menu_item_edit.show()
+	menu_item_edit.connect('activate', self.on_treeview_menu_edit)
+        self.popup.append(menu_item_edit)
+        menu_item_clone = Gtk.MenuItem("Clone")
+	menu_item_clone.show()
+	menu_item_clone.connect('activate', self.on_treeview_menu_clone)
+        self.popup.append(menu_item_clone)
+        menu_item_delete = Gtk.MenuItem("Delete")
+        menu_item_delete.show()
+	menu_item_delete.connect('activate', self.on_treeview_menu_delete)
+        self.popup.append(menu_item_delete)
 
         #setting up the layout, putting the treeview in a scrollwindow
         scrollable_treelist = Gtk.ScrolledWindow()
@@ -1118,16 +1169,56 @@ class PytAlarm(Gtk.Application):
 	#buttonAddAlarm.grab_default()
         hboxB.pack_start(buttonAddAlarm, False, False, self.DEF_PAD)
 
+        buttonCloneAlarm = Gtk.Button("Clone selected alarm")
+        buttonCloneAlarm.connect("clicked", self.on_wListAlarms_clone_clicked)
+        hboxB.pack_start(buttonCloneAlarm, False, False, self.DEF_PAD)
+
         buttonDelAlarm = Gtk.Button("Delete selected alarm")
         buttonDelAlarm.connect("clicked", self.on_wListAlarms_del_clicked)
-        #buttonDelAlarm.grab_default()
         hboxB.pack_start(buttonDelAlarm, False, False, self.DEF_PAD)
 
         buttonClose = Gtk.Button("Close")
         #buttonClose.connect("clicked", lambda w: Gtk.main_quit())
 	buttonClose.connect("clicked", self.on_wListAlarms_close_clicked)
-	#buttonClose.grab_default()
 	hboxB.pack_start(buttonClose, False, False, self.DEF_PAD)
+
+    def on_treeview_selection_changed(self, selection):
+        model, treeiter = selection.get_selected()
+        if treeiter != None:
+                self.selectedAlarm = str(model[treeiter][0])
+                #print "You selected ", self.selectedAlarm
+
+    def on_wListAlarms_addnew_clicked(self, widget):
+
+        if not app.bwAddAlarmActive:
+                self.bAddAlarmMode = 1
+                self.bStartLoad = 1
+
+                self.init_settings()
+
+                # create the window and the widgets
+                self.windowAddAlarm = AlarmWindow()
+                self.draw_gtk_addalarm(self.windowAddAlarm)
+                (x,y,w,h) = self.restore_window("windowAddAlarm")
+                self.windowAddAlarm.move(x, y)
+                #self.windowAddAlarm.resize(w, h)
+                app.bwAddAlarmActive = 1
+
+                self.windowAddAlarm.show_all()
+
+    def on_treeview_menu_edit(self, widget):
+        model, treeiter = self.tree_selection.get_selected()
+        if treeiter != None:
+	        self.editAlarm(model[treeiter][0])
+	return 0
+
+    def on_treeview_menu_clone(self, widget):
+	self.on_wListAlarms_clone_clicked(self)
+        return 0
+
+    def on_treeview_menu_delete(self, widget):
+	self.on_wListAlarms_del_clicked(self)
+        return 0
 
     def editAlarm(self, configSection):
 	#print "editAlarm"
@@ -1166,17 +1257,31 @@ class PytAlarm(Gtk.Application):
 	# show the widgets
         self.windowAddAlarm.show_all()
 
-    def treeview_row_activated(self, treeview, path, column):
+    def on_treeview_row_activated(self, treeview, path, column):
 	model = treeview.get_model()
-
 	self.editAlarm(model[path][0])
-
 	return 0
+
+    def on_treeview_button_press_event(self, treeview, event):
+	if event.button == 3:
+	        x = int(event.x)
+	        y = int(event.y)
+	        time = event.time
+	        pthinfo = treeview.get_path_at_pos(x, y)
+        	if pthinfo is not None:
+	            path, col, cellx, celly = pthinfo
+	            treeview.grab_focus()
+	            treeview.set_cursor( path, col, 0)
+	            self.popup.popup( None, None, None, None, event.button, event.time)
+	else:
+		return False
+        return True
 
     def isTimeToRun_alarm(self, sAlarmID, sName, sSound, sCron):
 	date = datetime.datetime.today()
 	nCDay = int(date.day)
 	nCMonth = int(date.month)
+	nCYear = int(date.year)
 	nCDOW = int(date.weekday()) + 1
 
 	nCHour = int(time.strftime("%H"))
@@ -1239,7 +1344,11 @@ class PytAlarm(Gtk.Application):
                 return 0
 
 	if not app.bAlarmOn:
-	        sTime = str(nCHour) + ":" + str(nCMinutes)
+		if int(nCHour) < 10:
+			nCHour = "0" + str(nCHour)
+                if int(nCMinutes) < 10:
+                        nCMinutes = "0" + str(nCMinutes)
+	        sTime = str(nCYear) + "." + str(nCMonth) + "." + str(nCDay) + " " + str(nCHour) + ":" + str(nCMinutes)
 	        sList = [(sName, sTime)]
 
 		bSkip = 0
@@ -1324,6 +1433,10 @@ class PytAlarm(Gtk.Application):
         buttonClose.connect("clicked", self.on_wLastAlarms_close_clicked)
         hboxB.pack_start(buttonClose, False, False, self.DEF_PAD)
 
+        buttonClear = Gtk.Button("Clear list")
+        buttonClear.connect("clicked", self.on_wLastAlarms_clear_clicked)
+        hboxB.pack_start(buttonClear, False, False, self.DEF_PAD)
+
     def draw_gtk_about(self, window):
 
         vboxW = Gtk.VBox(False, self.DEF_PAD)
@@ -1396,6 +1509,9 @@ class PytAlarm(Gtk.Application):
         self.save_window("windowLastAlarms")
         self.windowLastAlarms.hide()
         app.bwLastAlarmsActive = 0
+
+    def on_wLastAlarms_clear_clicked(self, widget):
+	app.lastalarms_liststore.clear()
 
     def addAlarm_activate(self):
 	self.windowAddAlarm = AlarmWindow()
