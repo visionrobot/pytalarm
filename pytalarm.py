@@ -2,7 +2,7 @@
 
 # pytalarm.py
 
-# Description: A Python program for the Gnome / Mate desktop 
+# Description: A Python program for the Gnome / Mate desktop
 # to make the computer act like an alarm clock.
 
 import re
@@ -28,11 +28,15 @@ import json
 
 import gi
 gi.require_version('Gtk', '3.0')
-gi.require_version('AppIndicator3', '0.1')
-gi.require_version('Notify', '0.7')
 from gi.repository import Gtk
-from gi.repository import AppIndicator3 as appindicator
+gi.require_version('Notify', '0.7')
 from gi.repository import Notify as notify
+
+if sys.platform == "win32":
+    import winsound
+else:
+    gi.require_version('AppIndicator3', '0.1')
+    from gi.repository import AppIndicator3 as appindicator
 
 APPINDICATOR_ID = 'pytalarm'
 
@@ -130,8 +134,21 @@ class PytAlarm(Gtk.Application):
         self.marked_date = 31*[0]
 
 	self.sSoundDir = "/usr/share/pytalarm/sounds/"
+        if sys.platform == "win32":
+		self.sRootDir = os.path.dirname(sys.argv[0])
+                if self.sRootDir == "":
+                    self.sRootDir = "./"
 
-	self.sConfigDir = os.getenv("HOME") + "/.config/pytalarm/"
+                self.sSoundDir = os.path.abspath(self.sRootDir + "/../../" + self.sSoundDir) + "/"
+
+	sHome = ""
+	if (sys.platform == "linux2") or (sys.platform == "linux3"):
+	   sHome = os.getenv("HOME")
+
+	if sys.platform == "win32":
+	   sHome = os.getenv("USERPROFILE")
+
+	self.sConfigDir = sHome + "/.config/pytalarm/"
 	if not os.path.exists(self.sConfigDir):
            os.makedirs(self.sConfigDir)
 
@@ -263,7 +280,7 @@ class PytAlarm(Gtk.Application):
 	self.entryCron.set_text(self.sCronEntry)
 	self.toggleActive.set_active(self.bAlarmActive)
 
-        self.sSettings = self.sName + " | " + self.sCronEntry + " | " + self.sSound + " | " + str(self.bAlarmActive);
+        #self.sSettings = self.sName + " | " + self.sCronEntry + " | " + self.sSound + " | " + str(self.bAlarmActive);
         #self.labelAlarmInfo.set_text(self.sSettings)
 
     def setsHour(self):
@@ -437,8 +454,12 @@ class PytAlarm(Gtk.Application):
 	if self.bStartLoad:
 		self.bStartLoad = 0
 	else:
-	        bashCommand = "/usr/bin/aplay -q " + self.sSoundDir + self.sSound
-		process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+		if sys.platform == "win32":
+                        winsound.PlaySound(self.sSound, winsound.SND_ALIAS)
+                else:
+			sSoundFile = self.sSoundDir + self.sSound
+                        bashCommand = "/usr/bin/aplay -q " + sSoundFile
+			process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 
 	self.save_strings()
 
@@ -1603,93 +1624,110 @@ class Application(Gtk.ApplicationWindow):
 	self.lastalarms_liststore = Gtk.ListStore(str, str)
 	self.sLastAddedList = [("","")]
 
-	self.pidfile = "/var/tmp/pytalarm.pid"
-	self.alarm = None
+        self.pidfile = "/var/tmp/pytalarm.pid"
+        self.sIconDir = "/usr/share/pytalarm/icons/"
+        self.sIcon = self.sIconDir + "pytalarm.svg"
+        self.sActiveIcon = self.sIconDir + "pytalarm-active.svg"
 
-        self.sIcon = "/usr/share/pytalarm/icons/pytalarm.svg"
-        self.sActiveIcon = "/usr/share/pytalarm/icons/pytalarm-active.svg"
+        if sys.platform == "win32":
+		sPidFileDir = os.getenv("TMP")
+		self.pidfile = sPidFileDir + "\pytalarm.pid"
+
+                self.sRootDir = os.path.dirname(sys.argv[0])
+                if self.sRootDir == "":
+                    self.sRootDir = "./"
+                self.sRootDir= os.path.abspath(self.sRootDir + "/../../")
+
+                self.sIcon = self.sRootDir + self.sIcon
+                self.sActiveIcon = self.sRootDir + self.sActiveIcon
+
+        self.alarm = None
 
 	self.sPytAlarmVersion = "Pytalarm 1.0.8"
 	self.sPytAlarmURL = "https://github.com/visionrobot/pytalarm"
 
     def start_indicator(self):
+        self.status_icon = Gtk.StatusIcon()
+	self.status_icon.set_from_file(app.sIcon)
+        #self.status_icon.set_from_stock(Gtk.STOCK_YES)
+        self.status_icon.connect("popup-menu", self.status_right_click_event)
+
+    def start_linux_indicator(self):
 	self.indicator = appindicator.Indicator.new(APPINDICATOR_ID, app.sIcon, appindicator.IndicatorCategory.APPLICATION_STATUS)
 
 	self.indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
-	self.indicator.set_menu(self.build_menu())
-	notify.init(APPINDICATOR_ID)
+	self.indicator.set_menu(self.setmenu())
 
-	notify.Notification.new("Message", "Pytalarm window is hidden", None).show()
-
-	self.rt = RepeatedTimer(1, app.alarm.check_alarm)
-	try:
-		Gtk.main()
-	finally:
-       		self.rt.stop()
-
-	#while True:
-	#	app.alarm.check_alarm()
-	#	time.sleep(0.1)
-	#	while Gtk.events_pending():
-	#		Gtk.main_iteration()
-
-        if os.path.isfile(app.pidfile):
-                os.unlink(app.pidfile)
+    def status_right_click_event(self, icon, button, time):
+	self.build_menu()
+	self.indicator_menu.popup(None, None, None, self.status_icon, button, time)
 
     def build_menu(self):
-	menu = Gtk.Menu()
+	self.indicator_menu = Gtk.Menu()
 
 	item_stop = Gtk.MenuItem('Stop the alarm')
 	item_stop.connect('activate', self.stop_alarm)
 	Gtk.Widget.set_tooltip_text(item_stop, "Stop the alarm sound, if it is running")
-	menu.append(item_stop)
+	self.indicator_menu.append(item_stop)
 
 	separator = Gtk.SeparatorMenuItem()
-	menu.append(separator)
+	self.indicator_menu.append(separator)
 
 	item_show = Gtk.MenuItem('List alarms')
 	item_show.connect('activate', self.list_alarms)
 	Gtk.Widget.set_tooltip_text(item_show, "Manage your alarms")
-	menu.append(item_show)
+	self.indicator_menu.append(item_show)
 
 	separator = Gtk.SeparatorMenuItem()
-	menu.append(separator)
+	self.indicator_menu.append(separator)
 
 	item_add = Gtk.MenuItem('Add alarm')
 	item_add.connect('activate', self.add_alarm)
-	menu.append(item_add)
+	self.indicator_menu.append(item_add)
 
 	separator = Gtk.SeparatorMenuItem()
-	menu.append(separator)
+	self.indicator_menu.append(separator)
 
         item_last = Gtk.MenuItem('Last alarms')
         item_last.connect('activate', self.last_alarms)
-        menu.append(item_last)
+        self.indicator_menu.append(item_last)
 
         separator = Gtk.SeparatorMenuItem()
-        menu.append(separator)
+        self.indicator_menu.append(separator)
 
         item_about = Gtk.MenuItem('About')
         item_about.connect('activate', self.about)
-        menu.append(item_about)
+        self.indicator_menu.append(item_about)
 
 	item_quit = Gtk.MenuItem('Quit')
 	item_quit.connect('activate', self.app_quit)
 	Gtk.Widget.set_tooltip_text(item_quit, "Quit the application")
-	menu.append(item_quit)
+	self.indicator_menu.append(item_quit)
 
-	menu.show_all()
+	self.indicator_menu.show_all()
 
-	return menu
+	return self.indicator_menu
 
     def stop_alarm(self, widget):
 	#print "Stop alarm"
 
-	bashCommand = "pkill -f /dev/shm/alarm.sh"
-	process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+        if sys.platform == "win32":
+                sPidFileDir = os.getenv("TMP")
+                self.alarmPidFile = sPidFileDir + "/alarmsound.pid"
+                if os.path.isfile(self.alarmPidFile):
+                    f=open (self.alarmPidFile,"r")
+                    for line in f:
+                        sPid=line.strip().lower()
+                    f.close()
+                    process = subprocess.Popen("taskkill /F /PID " + str(sPid))
+                    os.remove(self.alarmPidFile)
+        else:
+                bashCommand = "pkill -f /dev/shm/alarmsound.sh"
+		process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 
 	app.bAlarmOn = 0
-	app.indicator.set_icon(app.sIcon)
+	#app.indicator.set_icon(app.sIcon)
+	self.status_icon.set_from_file(self.sIcon)
 
 	nAlarmTs2 = time.time()
 	if (nAlarmTs2 - app.nAlarmTs < 61):
@@ -1704,7 +1742,8 @@ class Application(Gtk.ApplicationWindow):
                 nAlarmTs2 = time.time()
                 if (nAlarmTs2 - app.nAlarmTs > 61):
                         app.bAlarmOn = 0
-                        app.indicator.set_icon(app.sIcon)
+                        #app.indicator.set_icon(app.sIcon)
+			self.status_icon.set_from_file(self.sIcon)
                 return 0
 	else:
 		nAlarmTs2 = time.time()
@@ -1713,27 +1752,41 @@ class Application(Gtk.ApplicationWindow):
 
 		app.bAlarmOn = 1
 		app.nAlarmTs = time.time()
-		app.indicator.set_icon(app.sActiveIcon)
 
-	notify.Notification.new("Alarm: " + time.strftime("%H:%M") + " " , sName, app.sIcon).show()
+		#app.indicator.set_icon(app.sActiveIcon)
+		self.status_icon.set_from_file(self.sActiveIcon)
 
-	sScript = "/dev/shm/alarm.sh"
-
-	sSoundFile = app.alarm.sSoundDir + sSoundFile
+	if sys.platform != "win32":
+		notify.Notification.new("Alarm: " + time.strftime("%H:%M") + " " , sName, app.sIcon).show()
+                sSoundFile = app.alarm.sSoundDir + sSoundFile
 
 	if  os.path.exists(sSoundFile):
-		bashCommand = "s=0; while [ $s -lt 60 ]; do /usr/bin/aplay -q " + sSoundFile + "; sleep 0.5; s=$((s+1)); done"
-	        #process = subprocess.Popen("bash " + bashCommand.split(), stdout=subprocess.PIPE)
 
-		text_file = open(sScript, "w")
-		text_file.write(bashCommand)
-		text_file.close()
+            if sys.platform == "win32":
+                        sTmpDir = os.getenv("TMP")
+                        sAlarmScript = sTmpDir + "/alarmsound.py"
+                        if os.path.exists(sAlarmScript):
+                            os.remove(sAlarmScript)
 
-		bashCommand = "/bin/chmod u+x " + sScript
-		process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+                        sCommand = "import winsound; import os; \nsPid = str(os.getpid()); sPidFileDir = os.getenv(\"TMP\"); alarmPidFile = sPidFileDir + \"/alarmsound.pid\"; f = file(alarmPidFile, 'w'); f.write(sPid); f.close(); sSoundFile = \"" + sSoundFile + "\"; \nfor i in range(1,60): winsound.PlaySound(sSoundFile, winsound.SND_ALIAS)"
+                        scriptFile = open(sAlarmScript, "w")
+                        scriptFile.write(sCommand)
+                        scriptFile.close()
 
-		bashCommand = "/bin/bash " + sScript
-		process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+                        process = subprocess.Popen("python " + str(sAlarmScript))
+            else:
+                        sAlarmScript = "/dev/shm/alarmsound.sh"
+			bashCommand = "s=0; while [ $s -lt 60 ]; do /usr/bin/aplay -q " + sSoundFile + "; sleep 0.5; s=$((s+1)); done"
+
+			scriptFile = open(sAlarmScript, "w")
+			scriptFile.write(bashCommand)
+			scriptFile.close()
+
+			bashCommand = "/bin/chmod u+x " + sAlarmScript
+			process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+
+			bashCommand = "/bin/bash " + sAlarmScript
+			process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 
     def list_alarms(self, widget):
 	if not app.bwListAlarmsActive:
@@ -1777,10 +1830,11 @@ class Application(Gtk.ApplicationWindow):
 	# stop the alarm thread
 	self.rt.stop()
 
-	notify.uninit()
+        if sys.platform != "win32":
+		notify.uninit()
 
 	if os.path.isfile(app.pidfile):
-		os.unlink(app.pidfile)
+		os.remove(app.pidfile)
 
 	Gtk.main_quit()
 
@@ -1806,7 +1860,7 @@ if __name__ == "__main__":
                 os.kill(int(sPid), 0)
             except OSError:
 		if os.path.isfile(app.pidfile):
-                	os.unlink(app.pidfile)
+                	os.remove(app.pidfile)
 	    else:
 	    	sys.exit()
 
@@ -1814,7 +1868,32 @@ if __name__ == "__main__":
 
 	try:
         	app.alarm = PytAlarm()
-	        app.start_indicator()
+
+		if sys.platform == "win32":
+			app.start_indicator()
+		else:
+			#app.start_linux_indicator()
+			app.start_indicator()
+
+			notify.init(APPINDICATOR_ID)
+			notify.Notification.new("Message", "Pytalarm window is hidden", None).show()
+
+	        app.rt = RepeatedTimer(1, app.alarm.check_alarm)
+	        try:
+	                Gtk.main()
+	        finally:
+	                app.rt.stop()
+
+	        #while True:
+	        #       app.alarm.check_alarm()
+	        #       time.sleep(0.1)
+	        #       while Gtk.events_pending():
+	        #               Gtk.main_iteration()
+
+	        if os.path.isfile(app.pidfile):
+	                os.remove(app.pidfile)
+
 	finally:
 	        if os.path.isfile(app.pidfile):
-	                os.unlink(app.pidfile)
+	                os.remove(app.pidfile)
+
