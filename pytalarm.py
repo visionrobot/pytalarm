@@ -312,7 +312,7 @@ class PytAlarm(Gtk.Application):
 
 	self.toggleActive.set_active(self.bAlarmActive)
 
-        self.sSettings = self.sName + " | " + self.sCronEntry + " | " + self.sSound + " | " + str(self.bAlarmActive);
+        #self.sSettings = self.sName + " | " + self.sCronEntry + " | " + self.sSound + " | " + str(self.bAlarmActive);
         #self.labelAlarmInfo.set_text(self.sSettings)
 
     def toggle_addHM(self, widget):
@@ -397,7 +397,7 @@ class PytAlarm(Gtk.Application):
 	self.sMonthsSelected = str(month)
 	self.toggleEveryday.set_active(0)
 
-#	self.entryCron_update()
+	#self.entryCron_update()
 	self.save_strings()
 
     def entryCron_update(self):
@@ -1369,6 +1369,10 @@ class PytAlarm(Gtk.Application):
 			nCHour = "0" + str(nCHour)
                 if int(nCMinutes) < 10:
                         nCMinutes = "0" + str(nCMinutes)
+		if int(nCDay) < 10:
+			nCDay = "0" + str(nCDay)
+		if int(nCMonth) < 10:
+			nCMonth = "0" + str(nCMonth)
 	        sTime = str(nCYear) + "." + str(nCMonth) + "." + str(nCDay) + " " + str(nCHour) + ":" + str(nCMinutes)
 	        sList = [(sName, sTime)]
 
