@@ -1377,13 +1377,14 @@ class PytAlarm(Gtk.Application):
 	        sList = [(sName, sTime)]
 
 		bSkip = 0
-		for sTmpName,sTmpTime in app.sLastAddedList:
-			if sName == sTmpName and sTime == sTmpTime:
-				bSkip = 1
+		for sTmpList in app.sLastAddedList:
+			for sTmpName,sTmpTime in sTmpList:
+				if sName == sTmpName and sTime == sTmpTime:
+					bSkip = 1
 		if bSkip == 0:
 			for alarm_ref in sList:
 				app.lastalarms_liststore.append(list(alarm_ref))
-				app.sLastAddedList = sList
+				app.sLastAddedList.append(sList)
 
 	app.sAlarmStarted = sAlarmID
 	app.play_alarm(sName, sSound)
@@ -1626,7 +1627,7 @@ class Application(Gtk.ApplicationWindow):
 	self.sAlarmStarted = ""
 
 	self.lastalarms_liststore = Gtk.ListStore(str, str)
-	self.sLastAddedList = [("","")]
+	self.sLastAddedList = []
 
         self.pidfile = "/var/tmp/pytalarm.pid"
         self.sIconDir = "/usr/share/pytalarm/icons/"
