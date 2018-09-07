@@ -1,7 +1,7 @@
 Pytalarm
 =======
 
-Original authors:   Mihai Pintea <visionrobot@gmail.com>
+Original authors:  <visionrobot@gmail.com>
 
 New Versions
 ============
@@ -11,7 +11,7 @@ New versions of this package can be found at:
 
 Requirements
 ============
-  * python 2.7 or higher
+  * python 3.4 or higher
   * alsa-utils 1.0.28-1 or higher
   * python-gi 3.14.0-1 or higher
   * gir1.2-notify-0.7 0.7.6-2 or higher
