@@ -15,6 +15,7 @@ import sys
 
 import threading
 import subprocess
+#import ConfigParser as configparser
 import configparser
 from shutil import copyfile
 
@@ -160,7 +161,7 @@ class PytAlarm(Gtk.Application):
 
 		if (sHome == ""):
 			sHome="./"
-		if (not sHome[:-1].endswith('/')):
+		if (not sHome.endswith('/')):
 			sHome = sHome + "/"
 		self.sConfigDir = sHome + ".config/pytalarm/"
 		if not os.path.exists(self.sConfigDir):
