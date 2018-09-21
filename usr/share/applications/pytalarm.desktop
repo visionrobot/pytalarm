@@ -2,7 +2,7 @@
 Name=Python Alarm Clock
 Comment=Schedule your tasks
 
-Exec=python3 /usr/bin/pytalarm.py
+Exec=python /usr/bin/pytalarm.py
 Terminal=false
 Type=Application
 Categories=GNOME;GTK;Utility;

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # pytalarm.py
 
@@ -10,12 +10,19 @@ import string
 import datetime
 import glob
 
+import threading
+import subprocess
+
 import os
 import sys
 
-import threading
-import subprocess
-import configparser
+if (sys.version_info > (3, 0)):
+	print("Running on python3.")
+	import configparser
+else:
+	print("Running on python2.")
+	import ConfigParser as configparser
+
 from shutil import copyfile
 
 import time
@@ -160,7 +167,7 @@ class PytAlarm(Gtk.Application):
 
 		if (sHome == ""):
 			sHome="./"
-		if (not sHome[:-1].endswith('/')):
+		if (not sHome.endswith('/')):
 			sHome = sHome + "/"
 		self.sConfigDir = sHome + ".config/pytalarm/"
 		if not os.path.exists(self.sConfigDir):
@@ -1162,7 +1169,7 @@ class PytAlarm(Gtk.Application):
 				sCron[5] = config.get(sAlarmID, 'ScheduleDOW')
 				sSound = config.get(sAlarmID, 'Sound')
 				sScript = config.get(sAlarmID, 'Script')
-				bAlarmActive = config.getboolean(sAlarmID, 'Active') 
+				bAlarmActive = config.getboolean(sAlarmID, 'Active')
 
 				sList = [(sAlarmID, sName, sCron[2] + ":" + sCron[1], sCron[3], sCron[4], sCron[5], bAlarmActive)]
 
@@ -1192,7 +1199,7 @@ class PytAlarm(Gtk.Application):
 		grid.set_row_homogeneous(True)
 		vboxW.pack_start(grid, False, True, self.DEF_PAD)
 
-		self.filter = self.alarm_liststore.filter_new()   
+		self.filter = self.alarm_liststore.filter_new()
 		self.treeview = Gtk.TreeView.new_with_model(self.alarm_liststore);
 		self.treeview.set_headers_clickable(True)
 
@@ -1205,14 +1212,14 @@ class PytAlarm(Gtk.Application):
 				renderer = Gtk.CellRendererText()
 				column = Gtk.TreeViewColumn(column_title, renderer, text=i)
 
-				column.set_clickable(True)
-				column.set_sort_indicator(True)
-				column.set_sort_column_id(i)
+			column.set_clickable(True)
+			column.set_sort_indicator(True)
+			column.set_sort_column_id(i)
 
-				self.treeview.append_column(column)
+			self.treeview.append_column(column)
 
-				if column_title == "Id":
-					column.set_visible(False)
+			if column_title == "Id":
+				column.set_visible(False)
 
 		self.tree_selection = self.treeview.get_selection()
 		self.tree_selection.connect("changed", self.on_treeview_selection_changed)
