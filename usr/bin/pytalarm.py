@@ -529,14 +529,14 @@ class PytAlarm(Gtk.Application):
 		if not config.has_section(self.sAlarmID):
 			config.add_section(self.sAlarmID)
 
-		config.set(self.sAlarmID,'Name', self.sName)
-		config.set(self.sAlarmID,'Cron', self.sCronEntry)
-		config.set(self.sAlarmID,'ScheduleMinutes', self.sCron[1])
-		config.set(self.sAlarmID,'ScheduleHour', self.sCron[2])
-		config.set(self.sAlarmID,'ScheduleDays', self.sCron[3])
-		config.set(self.sAlarmID,'ScheduleMonths', self.sCron[4])
-		config.set(self.sAlarmID,'ScheduleDOW', self.sCron[5])
-		config.set(self.sAlarmID,'Sound', self.sSound)
+		config.set(self.sAlarmID,'Name', str(self.sName))
+		config.set(self.sAlarmID,'Cron', str(self.sCronEntry))
+		config.set(self.sAlarmID,'ScheduleMinutes', str(self.sCron[1]))
+		config.set(self.sAlarmID,'ScheduleHour', str(self.sCron[2]))
+		config.set(self.sAlarmID,'ScheduleDays', str(self.sCron[3]))
+		config.set(self.sAlarmID,'ScheduleMonths', str(self.sCron[4]))
+		config.set(self.sAlarmID,'ScheduleDOW', str(self.sCron[5]))
+		config.set(self.sAlarmID,'Sound', str(self.sSound))
 		config.set(self.sAlarmID,'Script', str(self.sScript))
 		config.set(self.sAlarmID,'Active', str(self.bAlarmActive))
 		copyfile(self.sConfigFile , self.sConfigFile + ".bak")
@@ -580,15 +580,15 @@ class PytAlarm(Gtk.Application):
 		sNewAlarmID = 'Alarm_' + str(timestamp)
 
 		config.add_section(sNewAlarmID)
-		config.set(sNewAlarmID,'Name', sName)
-		config.set(sNewAlarmID,'Cron', sCronEntry)
-		config.set(sNewAlarmID,'ScheduleMinutes', sCron[1])
-		config.set(sNewAlarmID,'ScheduleHour', sCron[2])
-		config.set(sNewAlarmID,'ScheduleDays', sCron[3])
-		config.set(sNewAlarmID,'ScheduleMonths', sCron[4])
-		config.set(sNewAlarmID,'ScheduleDOW', sCron[5])
-		config.set(sNewAlarmID,'Sound', sSound)
-		config.set(sNewAlarmID,'Script', sScript)
+		config.set(sNewAlarmID,'Name', str(sName))
+		config.set(sNewAlarmID,'Cron', str(sCronEntry))
+		config.set(sNewAlarmID,'ScheduleMinutes', str(sCron[1]))
+		config.set(sNewAlarmID,'ScheduleHour', str(sCron[2]))
+		config.set(sNewAlarmID,'ScheduleDays', str(sCron[3]))
+		config.set(sNewAlarmID,'ScheduleMonths', str(sCron[4]))
+		config.set(sNewAlarmID,'ScheduleDOW', str(sCron[5]))
+		config.set(sNewAlarmID,'Sound', str(sSound))
+		config.set(sNewAlarmID,'Script', str(sScript))
 		config.set(sNewAlarmID,'Active', str(bAlarmActive))
 
 		copyfile(self.sConfigFile , self.sConfigFile + ".bak")
@@ -1139,7 +1139,7 @@ class PytAlarm(Gtk.Application):
 
 		configSection = self.alarm_liststore[path][0]
 		bAlarmActive = self.alarm_liststore[path][column]
-		config.set(configSection,'Active', bAlarmActive)
+		config.set(configSection,'Active', str(bAlarmActive))
 		with open(self.sConfigFile, 'w') as configfile:
 			config.write(configfile)
 			configfile.close()
