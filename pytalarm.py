@@ -153,7 +153,7 @@ class PytAlarm(Gtk.Application):
 		self.sSoundDir = "/usr/share/pytalarm/sounds/"
 		sRootDir = ""
 		if sys.platform == "win32":
-			sRootDir = os.path.dirname(sys.argv[0])		
+			sRootDir = os.path.dirname(sys.argv[0])
 			if sRootDir == "":
 				sRootDir = "./"
 			self.sSoundDir = os.path.abspath(sRootDir + "/../../" + self.sSoundDir) + "/"
@@ -529,14 +529,14 @@ class PytAlarm(Gtk.Application):
 		if not config.has_section(self.sAlarmID):
 			config.add_section(self.sAlarmID)
 
-		config.set(self.sAlarmID,'Name', self.sName)
-		config.set(self.sAlarmID,'Cron', self.sCronEntry)
-		config.set(self.sAlarmID,'ScheduleMinutes', self.sCron[1])
-		config.set(self.sAlarmID,'ScheduleHour', self.sCron[2])
-		config.set(self.sAlarmID,'ScheduleDays', self.sCron[3])
-		config.set(self.sAlarmID,'ScheduleMonths', self.sCron[4])
-		config.set(self.sAlarmID,'ScheduleDOW', self.sCron[5])
-		config.set(self.sAlarmID,'Sound', self.sSound)
+		config.set(self.sAlarmID,'Name', str(self.sName))
+		config.set(self.sAlarmID,'Cron', str(self.sCronEntry))
+		config.set(self.sAlarmID,'ScheduleMinutes', str(self.sCron[1]))
+		config.set(self.sAlarmID,'ScheduleHour', str(self.sCron[2]))
+		config.set(self.sAlarmID,'ScheduleDays', str(self.sCron[3]))
+		config.set(self.sAlarmID,'ScheduleMonths', str(self.sCron[4]))
+		config.set(self.sAlarmID,'ScheduleDOW', str(self.sCron[5]))
+		config.set(self.sAlarmID,'Sound', str(self.sSound))
 		config.set(self.sAlarmID,'Script', str(self.sScript))
 		config.set(self.sAlarmID,'Active', str(self.bAlarmActive))
 		copyfile(self.sConfigFile , self.sConfigFile + ".bak")
@@ -580,15 +580,15 @@ class PytAlarm(Gtk.Application):
 		sNewAlarmID = 'Alarm_' + str(timestamp)
 
 		config.add_section(sNewAlarmID)
-		config.set(sNewAlarmID,'Name', sName)
-		config.set(sNewAlarmID,'Cron', sCronEntry)
-		config.set(sNewAlarmID,'ScheduleMinutes', sCron[1])
-		config.set(sNewAlarmID,'ScheduleHour', sCron[2])
-		config.set(sNewAlarmID,'ScheduleDays', sCron[3])
-		config.set(sNewAlarmID,'ScheduleMonths', sCron[4])
-		config.set(sNewAlarmID,'ScheduleDOW', sCron[5])
-		config.set(sNewAlarmID,'Sound', sSound)
-		config.set(sNewAlarmID,'Script', sScript)
+		config.set(sNewAlarmID,'Name', str(sName))
+		config.set(sNewAlarmID,'Cron', str(sCronEntry))
+		config.set(sNewAlarmID,'ScheduleMinutes', str(sCron[1]))
+		config.set(sNewAlarmID,'ScheduleHour', str(sCron[2]))
+		config.set(sNewAlarmID,'ScheduleDays', str(sCron[3]))
+		config.set(sNewAlarmID,'ScheduleMonths', str(sCron[4]))
+		config.set(sNewAlarmID,'ScheduleDOW', str(sCron[5]))
+		config.set(sNewAlarmID,'Sound', str(sSound))
+		config.set(sNewAlarmID,'Script', str(sScript))
 		config.set(sNewAlarmID,'Active', str(bAlarmActive))
 
 		copyfile(self.sConfigFile , self.sConfigFile + ".bak")
@@ -1139,7 +1139,7 @@ class PytAlarm(Gtk.Application):
 
 		configSection = self.alarm_liststore[path][0]
 		bAlarmActive = self.alarm_liststore[path][column]
-		config.set(configSection,'Active', bAlarmActive)
+		config.set(configSection,'Active', str(bAlarmActive))
 		with open(self.sConfigFile, 'w') as configfile:
 			config.write(configfile)
 			configfile.close()
@@ -1380,8 +1380,21 @@ class PytAlarm(Gtk.Application):
 
 		bCDOW = 0
 		if not sCron[5] == "*":
-			for i in re.split(',', sCron[5]):
-				if nCDOW == int(i):
+			if "," in str(sCron[5]):
+				for i in re.split(',', str(sCron[5])):
+					if nCDOW == int(i):
+						bCDOW = 1
+			if "-" in str(sCron[5]):
+				parts = re.split('-', str(sCron[5]))
+				for i in range(int(parts[0]), int(parts[1])+1):
+					if nCDOW == int(i):
+						bCDOW = 1
+			if "/" in str(sCron[5]):
+				parts = re.split('/', str(sCron[5]))
+				if nCDOW % int(parts[1]) == 0:
+					bCDOW = 1
+			if bCDOW == 0 and str.isdigit(sCron[5]):
+				if nCDOW == int(sCron[5]):
 					bCDOW = 1
 		else:
 			bCDOW = 1
@@ -1391,8 +1404,21 @@ class PytAlarm(Gtk.Application):
 
 		bCMonth = 0
 		if not sCron[4] == "*":
-			for i in re.split(',', sCron[4]):
-				if nCMonth == int(i):
+			if "," in str(sCron[4]):
+				for i in re.split(',', str(sCron[4])):
+					if nCMonth == int(i):
+						bCMonth = 1
+			if "-" in str(sCron[4]):
+				parts = re.split('-', str(sCron[4]))
+				for i in range(int(parts[0]), int(parts[1])+1):
+					if nCMonth == int(i):
+						bCMonth = 1
+			if "/" in str(sCron[4]):
+				parts = re.split('/', str(sCron[4]))
+				if nCMonth % int(parts[1]) == 0:
+					bCMonth = 1
+			if bCMonth == 0 and str.isdigit(sCron[4]):
+				if nCMonth == int(sCron[4]):
 					bCMonth = 1
 		else:
 			bCMonth = 1
@@ -1402,8 +1428,21 @@ class PytAlarm(Gtk.Application):
 
 		bCDay = 0
 		if not sCron[3] == "*":
-			for i in re.split(',', sCron[3]):
-				if nCDay == int(i):
+			if "," in str(sCron[3]):
+				for i in re.split(',', str(sCron[3])):
+					if nCDay == int(i):
+						bCDay = 1
+			if "-" in str(sCron[3]):
+				parts = re.split('-', str(sCron[3]))
+				for i in range(int(parts[0]), int(parts[1])+1):
+					if nCDay == int(i):
+						bCDay = 1
+			if "/" in str(sCron[3]):
+				parts = re.split('/', str(sCron[3]))
+				if nCDay % int(parts[1]) == 0:
+					bCDay = 1
+			if bCDay == 0 and str.isdigit(sCron[3]):
+				if nCDay == int(sCron[3]):
 					bCDay = 1
 		else:
 			bCDay = 1
@@ -1413,21 +1452,46 @@ class PytAlarm(Gtk.Application):
 
 		bCHour = 0
 		if not sCron[2] == "*":
-			for i in re.split(',', sCron[2]):
-				if nCHour == int(i):
+			if "," in str(sCron[2]):
+				for i in re.split(',', str(sCron[2])):
+					if nCHour == int(i):
+						bCHour = 1
+			if "-" in str(sCron[2]):
+				parts = re.split('-', str(sCron[2]))
+				for i in range(int(parts[0]), int(parts[1])+1):
+					if nCHour == int(i):
+						bCHour = 1
+			if "/" in str(sCron[2]):
+				parts = re.split('/', str(sCron[2]))
+				if nCHour % int(parts[1]) == 0:
+					bCHour = 1
+			if bCHour == 0 and str.isdigit(sCron[2]):
+				if nCHour == int(sCron[2]):
 					bCHour = 1
 		else:
 			bCHour = 1
-
 
 		if not bCHour:
 			return 0
 
 		bCMinutes = 0
 		if not sCron[1] == "*":
-			for i in re.split(',', sCron[1]):
-				if nCMinutes == int(i):
-				   bCMinutes = 1
+			if "," in str(sCron[1]):
+				for i in re.split(',', str(sCron[1])):
+					if nCMinutes == int(i):
+					   bCMinutes = 1
+			if "-" in str(sCron[1]):
+				parts = re.split('-', str(sCron[1]))
+				for i in range(int(parts[0]), int(parts[1])+1):
+					if nCMinutes == int(i):
+						bCMinutes = 1
+			if "/" in str(sCron[1]):
+				parts = re.split('/', str(sCron[1]))
+				if nCMinutes % int(parts[1]) == 0:
+					bCMinutes = 1
+			if bCMinutes == 0 and str.isdigit(sCron[1]):
+				if nCMinutes == int(sCron[1]):
+					bCMinutes = 1
 		else:
 			bCMinutes = 1
 
@@ -1477,7 +1541,6 @@ class PytAlarm(Gtk.Application):
 				sSound = config.get(sAlarmID, 'Sound')
 				sScript = config.get(sAlarmID, 'Script')
 				bAlarmActive = config.getboolean(sAlarmID, 'Active')
-
 				if bAlarmActive:
 					self.isTimeToRun_alarm(sAlarmID, sName, sSound, sScript, sCron)
 
@@ -1720,7 +1783,7 @@ class Application(Gtk.ApplicationWindow):
 
 		self.alarm = None
 
-		self.sPytAlarmVersion = "Pytalarm 1.0.9"
+		self.sPytAlarmVersion = "Pytalarm 1.1.0"
 		self.sPytAlarmURL = "https://github.com/visionrobot/pytalarm"
 
 	def start_indicator(self):
@@ -1731,9 +1794,10 @@ class Application(Gtk.ApplicationWindow):
 
 	def start_linux_indicator(self):
 		self.indicator = appindicator.Indicator.new(APPINDICATOR_ID, app.sIcon, appindicator.IndicatorCategory.APPLICATION_STATUS)
+		#self.indicator = appindicator.Indicator.new(APPINDICATOR_ID, "semi-starred-symbolic", appindicator.IndicatorCategory.APPLICATION_STATUS)
 
 		self.indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
-		self.indicator.set_menu(self.setmenu())
+		self.indicator.set_menu(self.build_menu())
 
 	def status_right_click_event(self, icon, button, time):
 		self.build_menu()
@@ -1803,8 +1867,10 @@ class Application(Gtk.ApplicationWindow):
 			process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 
 		app.bAlarmOn = 0
-		#app.indicator.set_icon(app.sIcon)
-		self.status_icon.set_from_file(self.sIcon)
+		if sys.platform == "win32":
+			self.status_icon.set_from_file(self.sIcon)
+		else:
+			app.indicator.set_icon(app.sIcon)
 
 		nAlarmTs2 = time.time()
 		if (nAlarmTs2 - app.nAlarmTs < 61):
@@ -1819,8 +1885,10 @@ class Application(Gtk.ApplicationWindow):
 			nAlarmTs2 = time.time()
 			if (nAlarmTs2 - app.nAlarmTs > 61):
 				app.bAlarmOn = 0
-				#app.indicator.set_icon(app.sIcon)
-				self.status_icon.set_from_file(self.sIcon)
+				if sys.platform == "win32":
+					self.status_icon.set_from_file(self.sIcon)
+				else:
+					app.indicator.set_icon(app.sIcon)
 			return 0
 		else:
 			nAlarmTs2 = time.time()
@@ -1830,8 +1898,10 @@ class Application(Gtk.ApplicationWindow):
 			app.bAlarmOn = 1
 			app.nAlarmTs = time.time()
 
-			#app.indicator.set_icon(app.sActiveIcon)
-			self.status_icon.set_from_file(self.sActiveIcon)
+			if sys.platform == "win32":
+				self.status_icon.set_from_file(self.sActiveIcon)
+			else:
+				app.indicator.set_icon(app.sActiveIcon)
 
 		if sys.platform != "win32":
 			notify.Notification.new("Alarm: " + time.strftime("%H:%M") + " " , sName, app.sIcon).show()
@@ -1962,8 +2032,8 @@ if __name__ == "__main__":
 		if sys.platform == "win32":
 			app.start_indicator()
 		else:
-			#app.start_linux_indicator()
-			app.start_indicator()
+			app.start_linux_indicator()
+			#app.start_indicator()
 
 			notify.init(APPINDICATOR_ID)
 			notify.Notification.new("Message", "Pytalarm window is hidden", None).show()
